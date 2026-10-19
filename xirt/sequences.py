@@ -1,16 +1,16 @@
 """Module to process peptide sequences."""
+
+import logging
 import re
 from collections import Counter
+
 import numpy as np
 from pyteomics import parser
 from sklearn.preprocessing import LabelEncoder
-import cython
-import logging
-from xiutilities import pandas_utils
 
 from xirt import const
 
-logger = logging.getLogger('xirt').getChild(__name__)
+logger = logging.getLogger("xirt").getChild(__name__)
 
 
 def simplify_alphabet(sequence):
@@ -46,16 +46,18 @@ def replace_numbers(sequence):
     :param sequence:
     :return:
     """
-    rep = {"1": "one",
-           "2": "two",
-           "3": "three",
-           "4": "four",
-           "5": "five",
-           "6": "six",
-           "7": "seven",
-           "8": "eight",
-           "9": "nine",
-           "0": "zero"}
+    rep = {
+        "1": "one",
+        "2": "two",
+        "3": "three",
+        "4": "four",
+        "5": "five",
+        "6": "six",
+        "7": "seven",
+        "8": "eight",
+        "9": "nine",
+        "0": "zero",
+    }
     pattern = re.compile(r"|".join(rep.keys()))
     return pattern.sub(lambda m: rep[re.escape(m.group(0))], sequence)
 
@@ -69,7 +71,7 @@ def remove_nterm_mod(sequence):
     :param sequence: str, peptide sequence
     :return:
     """
-    return re.sub(r'^([a-z]+)([A-Z])', r'\2', sequence, flags=re.MULTILINE)
+    return re.sub(r"^([a-z]+)([A-Z])", r"\2", sequence, flags=re.MULTILINE)
 
 
 def rewrite_modsequences(sequence):
@@ -87,7 +89,7 @@ def rewrite_modsequences(sequence):
     :param sequence: str, peptide sequence
     :return:
     """
-    return re.sub(r"([A-Z])([^A-Z]+)", r'\2\1', sequence)
+    return re.sub(r"([A-Z])([^A-Z]+)", r"\2\1", sequence)
 
 
 def remove_lower_letters(sequence):
@@ -105,7 +107,7 @@ def to_unmodified_sequence(sequence):
     :param sequence: str, peptide sequence
     :return:
     """
-    return (re.sub(r"[^[A-Z]", "", sequence))
+    return re.sub(r"[^[A-Z]", "", sequence)
 
 
 def reorder_sequences(matches_df, column_names=const.default_column_names):
@@ -132,23 +134,25 @@ def reorder_sequences(matches_df, column_names=const.default_column_names):
     counts = [(i, j) for i, j in Counter(pairs_noidx).items() if j == 2]
     if len(counts) * 2 != len(pairs_noidx):
         print(match_columns)
-        raise ValueError("Error! Automatic column matching could not find pairwise crosslink "
-                         "columns. Please make sure that you have a peptide1, peptide2 "
-                         "column name pattern for crosslinks. Columns must appear in pairs if there"
-                         " is a number in the end of the name.")
+        raise ValueError(
+            "Error! Automatic column matching could not find pairwise crosslink "
+            "columns. Please make sure that you have a peptide1, peptide2 "
+            "column name pattern for crosslinks. Columns must appear in pairs if there"
+            " is a number in the end of the name."
+        )
 
     # order logic, last comparison checks lexigographically
     is_longer = (
-        matches_df[column_names['peptide1_sequence']].apply(len)
-        > matches_df[column_names['peptide2_sequence']].apply(len)
+        matches_df[column_names["peptide1_sequence"]].apply(len)
+        > matches_df[column_names["peptide2_sequence"]].apply(len)
     ).values
     is_shorter = (
-        matches_df[column_names['peptide1_sequence']].apply(len)
-        < matches_df[column_names['peptide2_sequence']].apply(len)
+        matches_df[column_names["peptide1_sequence"]].apply(len)
+        < matches_df[column_names["peptide2_sequence"]].apply(len)
     ).values
     is_greater = (
-        matches_df[column_names['peptide1_sequence']]
-        > matches_df[column_names['peptide2_sequence']]
+        matches_df[column_names["peptide1_sequence"]]
+        > matches_df[column_names["peptide2_sequence"]]
     ).values
 
     # create a copy of the dataframe
@@ -173,10 +177,9 @@ def reorder_sequences(matches_df, column_names=const.default_column_names):
     return swapping_df
 
 
-def modify_cl_residues(matches_df,
-                       seq_in,
-                       column_names=const.default_column_names,
-                       reduce_cl=False):
+def modify_cl_residues(
+    matches_df, seq_in, column_names=const.default_column_names, reduce_cl=False
+):
     """
     Change the cross-linked residues to modified residues.
 
@@ -197,15 +200,15 @@ def modify_cl_residues(matches_df,
         matches_df["Seqar_" + seq_i] = matches_df.apply(
             lambda r: convert_seqar(
                 r["Seqar_" + seq_i],
-                r[column_names['link_pos_basename'] + str(seq_id + 1)],
-                reduce_cl
+                r[column_names["link_pos_basename"] + str(seq_id + 1)],
+                reduce_cl,
             ),
-            axis=1
+            axis=1,
         )
 
 
-@cython.ccall
 def convert_seqar(seqar: list, linkpos: int, reduce_cl=False):
+    """Mark a valid crosslinked residue in a termini-inclusive token list."""
     if not isinstance(linkpos, int):
         return seqar
     if linkpos < 0 or linkpos >= len(seqar):
@@ -245,9 +248,7 @@ def get_alphabet(sequences):
     -------
     List with modification strings.
     """
-    return np.unique(
-        re.findall("-OH|H-|[a-z0-9]+[A-Z]|[A-Z]", " ".join(sequences))
-    )
+    return np.unique(re.findall("-OH|H-|[a-z0-9]+[A-Z]|[A-Z]", " ".join(sequences)))
 
 
 def label_encoding(sequences, min_sequence_length, max_sequence_length, alphabet=[], le=None):
@@ -282,23 +283,18 @@ def label_encoding(sequences, min_sequence_length, max_sequence_length, alphabet
 
     logger.debug("Padding sequences")
 
-    max_arr_len = min([
-        sequences.str.len().max(),
-        max_sequence_length
-    ])
+    max_arr_len = min([sequences.str.len().max(), max_sequence_length])
 
-    max_arr_len = max([
-        max_arr_len,
-        min_sequence_length
-    ])
+    max_arr_len = max([max_arr_len, min_sequence_length])
 
     # use an offset of +1 since shorter sequences will be padded with zeros
     # to achieve equal sequence lengths
-    X_encoded = pandas_utils.async_apply(
-        sequences,
-        lambda x: np.concatenate([
-            np.zeros(max_arr_len),  # Pad zeros
-            le.transform(x) + 1  # Add one to avoid zero padding conflict
-        ])[-max_arr_len:]  # Cut to length
-    )
+    X_encoded = sequences.apply(
+        lambda x: np.concatenate(
+            [
+                np.zeros(max_arr_len),  # Pad zeros
+                le.transform(x) + 1,  # Add one to avoid zero padding conflict
+            ]
+        )[-max_arr_len:]  # Cut to length
+    ).apply(lambda x: x.astype(np.int64))
     return X_encoded, le

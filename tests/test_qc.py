@@ -10,6 +10,16 @@ def test_custom_r2():
     assert r2 == exp_r2
 
 
+def test_custom_r2_penalizes_biased_predictions():
+    observed = np.array([1, 2, 3, 4, 5])
+    assert qc.custom_r2(observed, observed + 10) == -49.0
+
+
+def test_custom_r2_reports_undefined_observations(caplog):
+    assert np.isnan(qc.custom_r2(np.ones(3), np.ones(3)))
+    assert "undefined" in caplog.text
+
+
 def test_relaxed_accuracy():
     x = np.array([1, 2, 3, 4, 5])
     # 5 = 1 off, 7 = 2 off

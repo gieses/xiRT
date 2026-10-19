@@ -241,21 +241,21 @@ def test_get_gravy():
     # http://www.gravy-calculator.de/index.php?page=result&by=text&from=direct
     peptide = "ELVIS"
     exp_gravy = 1.64
-    return exp_gravy == features.get_gravy(peptide)
+    assert exp_gravy == features.get_gravy(peptide)
 
 
 def test_get_pi():
     # http://www.gravy-calculator.de/index.php?page=result&by=text&from=direct
     peptide = "ELVIS"
     exp_pi = 4.00
-    return exp_pi == np.round(features.get_pi(peptide))
+    assert exp_pi == np.round(features.get_pi(peptide))
 
 
 def test_get_mw():
     # http://www.gravy-calculator.de/index.php?page=result&by=text&from=direct
     peptide = "ELVIS"
     exp_mw = 559.66
-    return np.round(exp_mw) == np.round(features.get_weight(peptide))
+    assert np.round(exp_mw) == np.round(features.get_weight(peptide))
 
 
 def test_get_AA_matrix_custom_position():

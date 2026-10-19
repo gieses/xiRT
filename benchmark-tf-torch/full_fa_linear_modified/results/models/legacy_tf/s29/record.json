@@ -1,0 +1,226 @@
+{
+  "status": "ok",
+  "scope": "full_cohort",
+  "stage": "final",
+  "dataset": "full_fa_linear_modified",
+  "variant": "legacy_tf",
+  "candidate": {
+    "dropout": 0.1,
+    "id": "lr_high",
+    "learning_rate": 0.003,
+    "scheduler": "cosine",
+    "weight_decay": 0.01
+  },
+  "seed": 29,
+  "protocol_sha256": "1cbf390d9b83fe747adcf9dae1a8f9921ac1373fcd9c818523212c99b0bb2dc2",
+  "source_snapshot_sha256": "be59996d188bf76e19a99f4fd40e99675dd143170a1bf3d7cdf74630349b6e67",
+  "data_manifest_sha256": "9acc58a18819f7ce221498e3c3e9168b921190be5278276389c3fbca4cd2c93e",
+  "pairs_sha256": "b894407603bc03be24f44fb506b91fd97ccffea795228ce5d43cc7f34af89c21",
+  "tasks": [
+    "rp"
+  ],
+  "excluded_unavailable_tasks": [],
+  "best_epoch": 18,
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 0.9935030783612304,
+      "validation_loss": 0.747776210308075,
+      "learning_rate_ratio": 0.16666666666666666
+    },
+    {
+      "epoch": 2,
+      "train_loss": 0.9652304323173008,
+      "validation_loss": 0.7268879413604736,
+      "learning_rate_ratio": 0.3333333333333333
+    },
+    {
+      "epoch": 3,
+      "train_loss": 0.9025518894195557,
+      "validation_loss": 0.6853817105293274,
+      "learning_rate_ratio": 0.5
+    },
+    {
+      "epoch": 4,
+      "train_loss": 0.6365733049398551,
+      "validation_loss": 0.52784264087677,
+      "learning_rate_ratio": 0.6666666666666666
+    },
+    {
+      "epoch": 5,
+      "train_loss": 0.4099649740508729,
+      "validation_loss": 0.3589562773704529,
+      "learning_rate_ratio": 0.8333333333333334
+    },
+    {
+      "epoch": 6,
+      "train_loss": 0.33883971239160177,
+      "validation_loss": 0.310025155544281,
+      "learning_rate_ratio": 1.0
+    },
+    {
+      "epoch": 7,
+      "train_loss": 0.26681284019552126,
+      "validation_loss": 0.24295665323734283,
+      "learning_rate_ratio": 1.0
+    },
+    {
+      "epoch": 8,
+      "train_loss": 0.2233745099942377,
+      "validation_loss": 0.21567964553833008,
+      "learning_rate_ratio": 0.9991306472233392
+    },
+    {
+      "epoch": 9,
+      "train_loss": 0.20141175233878972,
+      "validation_loss": 0.18664367496967316,
+      "learning_rate_ratio": 0.996525642526691
+    },
+    {
+      "epoch": 10,
+      "train_loss": 0.1822126927916989,
+      "validation_loss": 0.1724119931459427,
+      "learning_rate_ratio": 0.9921941360840605
+    },
+    {
+      "epoch": 11,
+      "train_loss": 0.18436942930601857,
+      "validation_loss": 0.16377419233322144,
+      "learning_rate_ratio": 0.9861513424698034
+    },
+    {
+      "epoch": 12,
+      "train_loss": 0.18728068706813766,
+      "validation_loss": 0.17201277613639832,
+      "learning_rate_ratio": 0.9784184872168786
+    },
+    {
+      "epoch": 13,
+      "train_loss": 0.18264731159605133,
+      "validation_loss": 0.1649070680141449,
+      "learning_rate_ratio": 0.9690227322613899
+    },
+    {
+      "epoch": 14,
+      "train_loss": 0.1785635615967534,
+      "validation_loss": 0.16449570655822754,
+      "learning_rate_ratio": 0.9579970805352941
+    },
+    {
+      "epoch": 15,
+      "train_loss": 0.16575926341162137,
+      "validation_loss": 0.17034997045993805,
+      "learning_rate_ratio": 0.9453802600424
+    },
+    {
+      "epoch": 16,
+      "train_loss": 0.1575264995997669,
+      "validation_loss": 0.17490632832050323,
+      "learning_rate_ratio": 0.931216587824841
+    },
+    {
+      "epoch": 17,
+      "train_loss": 0.16106409737668886,
+      "validation_loss": 0.16653069853782654,
+      "learning_rate_ratio": 0.9155558142978499
+    },
+    {
+      "epoch": 18,
+      "train_loss": 0.15678810038449575,
+      "validation_loss": 0.15723389387130737,
+      "learning_rate_ratio": 0.8984529484996099
+    },
+    {
+      "epoch": 19,
+      "train_loss": 0.1531095056446052,
+      "validation_loss": 0.17152605950832367,
+      "learning_rate_ratio": 0.879968064870002
+    },
+    {
+      "epoch": 20,
+      "train_loss": 0.15791279930461405,
+      "validation_loss": 0.17843979597091675,
+      "learning_rate_ratio": 0.8601660922369438
+    },
+    {
+      "epoch": 21,
+      "train_loss": 0.1534674541533359,
+      "validation_loss": 0.16120965778827667,
+      "learning_rate_ratio": 0.8391165857515143
+    },
+    {
+      "epoch": 22,
+      "train_loss": 0.14779231477003157,
+      "validation_loss": 0.19570454955101013,
+      "learning_rate_ratio": 0.816893482572947
+    },
+    {
+      "epoch": 23,
+      "train_loss": 0.1497247474873724,
+      "validation_loss": 0.1572599858045578,
+      "learning_rate_ratio": 0.7935748421616636
+    },
+    {
+      "epoch": 24,
+      "train_loss": 0.15219644498239998,
+      "validation_loss": 0.17304155230522156,
+      "learning_rate_ratio": 0.7692425720925715
+    },
+    {
+      "epoch": 25,
+      "train_loss": 0.14937014320145356,
+      "validation_loss": 0.1738486886024475,
+      "learning_rate_ratio": 0.7439821403517187
+    },
+    {
+      "epoch": 26,
+      "train_loss": 0.1431090664095674,
+      "validation_loss": 0.1625567376613617,
+      "learning_rate_ratio": 0.7178822751268776
+    }
+  ],
+  "epochs_budget": 60,
+  "setup_seconds": 2.4712283560074866,
+  "training_seconds": 38.976885008014506,
+  "checkpoint_sha256": "347bf8923552ef0730678b8e381cc5b4e94960269798df8f403bda9f46a1527c",
+  "checkpoint_bytes": 8334,
+  "validation_predictions_sha256": "2501ef64bedb8be6eb3dc83f5ebfd32748c7f97f09055d9f516ae9eecfffbce1",
+  "validation_loss": 0.15723389387130737,
+  "validation_quality": {
+    "mae_seconds": 371.3870237046394,
+    "rmse_seconds": 498.68389845974576,
+    "r2": 0.7926267260660416
+  },
+  "initial_adapter_gradient_l2": null,
+  "model": {
+    "framework": "TensorFlow",
+    "framework_version": "2.16.2",
+    "device": "cpu",
+    "optimizer": "AdamW",
+    "legacy_commit": "52f49bfa79d4b451b2003a8cb19748bc0384c1a6",
+    "source_sha256": "389071f3e40eeaff35cf14d95ba8ca36e9e5f9ce737308974e660c65ba76a5dc",
+    "optimizer_exception": "Original architecture; benchmark explicitly replaces optimizer with AdamW rather than the historical default Adam.",
+    "checkpoint_format": "NumPy NPZ (allow_pickle=False)",
+    "total_parameters": 1793,
+    "trainable_parameters": 1793,
+    "adapter_targets": [],
+    "initial_parameters_sha256": "bad26483e71bc6036eb7ba44f49e490b1301128b5aa1deb71cf87e96e919df94"
+  },
+  "diagnostics": {
+    "frozen_parameters_unchanged": true,
+    "adapter_update_l2": null
+  },
+  "peak_cpu_rss_mib": 507.1953125,
+  "test_evaluated": true,
+  "test_quality": {
+    "mae_seconds": 434.2284780797146,
+    "rmse_seconds": 572.884533735394,
+    "r2": 0.7961102534851026
+  },
+  "inference_seconds": 0.5035622949944809,
+  "selection_sha256": "d0951ead7833ccb820f4c3cb99b502fee08ec3332751da04aa37a67d612f36d1",
+  "selected_training_record_sha256": "adcef2811018e26d544a4718f61b6257067f25b31174567170ee17c713d12b8f",
+  "test_predictions_sha256": "b3918523e5c32b28b02983abb034f8090003c29ae1faff5d8089915c3e655731",
+  "job_seconds": 5.02241679400322,
+  "record_identity": "ee83502393391b8df2fdadc3ac5136ebe2c85095acfea2133b1fefea849c699d"
+}

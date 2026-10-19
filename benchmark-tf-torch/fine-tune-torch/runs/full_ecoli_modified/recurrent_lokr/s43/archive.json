@@ -1,0 +1,9 @@
+{
+  "protocol_sha256": "2eae9f1a7aefab5c8b66459b801abb88828ac75a18517a0617db110d8c0305e6",
+  "files": {
+    "history.csv": "741d6652b0b5f049c8e16d2e31cbb9092c7d7d6fbae86885f60b65d62b975de7",
+    "model.pt": "90ac5423ac9bc507a921d1238435c8183295cf0724d9db234262ba5ad33c4f3a",
+    "predictions.csv": "926421c6a26f63f8a78a354deb6828958c2c34834cdc79a5afb80cc7d50cc0fc",
+    "record.json": "455e85f1647c28cda2619d5ba9464688485949f4854a5f6b98878900d0d2f8d0"
+  }
+}

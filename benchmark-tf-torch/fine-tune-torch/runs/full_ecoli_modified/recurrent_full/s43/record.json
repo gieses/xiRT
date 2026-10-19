@@ -1,0 +1,32 @@
+{
+  "status": "ok",
+  "dataset": "full_ecoli_modified",
+  "seed": 43,
+  "strategy": "recurrent_full",
+  "protocol_sha256": "2eae9f1a7aefab5c8b66459b801abb88828ac75a18517a0617db110d8c0305e6",
+  "base_checkpoint_sha256": "72b1303aa81f6fce7393ccd3b9697555f01d4d2ca7c307d339b4b5e4ecbe90b4",
+  "trainable_parameters": 1729,
+  "total_parameters": 1729,
+  "epochs_executed": 30,
+  "best_epoch": 27,
+  "training_seconds": 52.98651288804831,
+  "test_inference_seconds": 0.04448718699859455,
+  "quality": {
+    "train": {
+      "rmse_seconds": 242.80121307549433,
+      "mae_seconds": 165.5003017456925,
+      "r2": 0.9175492665017478
+    },
+    "validation": {
+      "rmse_seconds": 266.1068644437627,
+      "mae_seconds": 175.44125790566036,
+      "r2": 0.9016283480819722
+    },
+    "test": {
+      "rmse_seconds": 258.569209336481,
+      "mae_seconds": 174.54849258273507,
+      "r2": 0.9086416635772046
+    }
+  },
+  "frozen_parameters_unchanged": true
+}

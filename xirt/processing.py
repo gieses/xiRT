@@ -4,41 +4,35 @@ Combines several sequence processing steps for convenience and sequence-
 unrelated processing functions.
 """
 
-import numpy as np
-import pandas as pd
-from pyteomics import parser
-from sklearn.preprocessing import LabelEncoder
-from tensorflow.keras import utils
 import logging
-from xirt import sequences as xs
 import multiprocessing as mp
 from functools import partial
 from math import ceil
 
+import numpy as np
+import pandas as pd
+from pyteomics import parser
+from sklearn.preprocessing import LabelEncoder
 
-logger = logging.getLogger('xirt').getChild(__name__)
+from xirt import sequences as xs
+
+logger = logging.getLogger("xirt").getChild(__name__)
 
 
 def prepare_seqs_mp(psms_df, seq_cols):
-    n_worker = min(
-        [
-            ceil(len(psms_df)/10_000),
-            mp.cpu_count()
-        ]
-    )
-    slice_size = ceil(len(psms_df)/n_worker)
+    """Prepare sequences, avoiding process startup for small tables."""
+    if len(psms_df) < 10_000:
+        return prepare_seqs(psms_df, seq_cols)
+    n_worker = min([ceil(len(psms_df) / 10_000), mp.cpu_count()])
+    slice_size = ceil(len(psms_df) / n_worker)
     slices = [
-        psms_df[seq_cols].iloc[i*slice_size:(i+1)*slice_size]
-        for i in range(n_worker)
+        psms_df[seq_cols].iloc[i * slice_size : (i + 1) * slice_size] for i in range(n_worker)
     ]
 
     prepare_job = partial(prepare_seqs, seq_cols=seq_cols)
 
     with mp.Pool(n_worker) as pool:
-        results = pool.map(
-            prepare_job,
-            slices
-        )
+        results = pool.map(prepare_job, slices)
 
     result = pd.concat(results)
     for c in result.columns:
@@ -93,7 +87,9 @@ def prepare_seqs(psms_df, seq_cols):
     return psms_df
 
 
-def featurize_sequences(psms_df, seq_cols=["Seqar_Peptide1", "Seqar_Peptide2"], max_length=-1):
+def featurize_sequences(
+    psms_df, seq_cols=["Seqar_Peptide1", "Seqar_Peptide2"], max_length=-1, le=None
+):
     """Generate a featureized version of sequences from a data frame.
 
     The featureization is done via by retrieving all modifications, the relevant alphabet of amino
@@ -107,38 +103,35 @@ def featurize_sequences(psms_df, seq_cols=["Seqar_Peptide1", "Seqar_Peptide2"], 
     # transform a list of amino acids to a feature dataframe
     # if two sequence columns (crosslinks)
 
-    # define lambda function to get the alphabet in both cases
-    f = lambda x: xs.get_alphabet(x)
-
     # get padding length
     if max_length == -1:
-        max_length = psms_df[seq_cols].applymap(len).max().max()
-    logger.info("Setting max_length to: {}".format(max_length))
+        max_length = psms_df[seq_cols].map(len).max().max()
+    logger.info(f"Setting max_length to: {max_length}")
 
     # get amino acid alphabet
     if len(seq_cols) > 1:
-        alphabet = np.union1d(f(psms_df[seq_cols[0]].str.join(sep="").drop_duplicates()),
-                              f(psms_df[seq_cols[1]].str.join(sep="").drop_duplicates()))
+        alphabet = np.union1d(
+            xs.get_alphabet(psms_df[seq_cols[0]].str.join(sep="").drop_duplicates()),
+            xs.get_alphabet(psms_df[seq_cols[1]].str.join(sep="").drop_duplicates()),
+        )
     else:
-        alphabet = f(psms_df[seq_cols[0]].str.join(sep="").drop_duplicates())
+        alphabet = xs.get_alphabet(psms_df[seq_cols[0]].str.join(sep="").drop_duplicates())
 
-    logger.info("alphabet: {}".format(alphabet))
+    logger.info(f"alphabet: {alphabet}")
 
     # perform the label encoding + padding
     logger.debug("labeling encoding")
-    min_length = psms_df[seq_cols[0]].str.len().max()
-    if len(seq_cols) > 1:
-        min_length = max([
-            min_length,
-            psms_df[seq_cols[1]].str.len().max()
-        ])
-    le = LabelEncoder()
-    le.fit(alphabet)
+    min_length = max_length
+    if le is None:
+        le = LabelEncoder().fit(alphabet)
+    else:
+        alphabet = le.classes_
     encoded_s1, _ = xs.label_encoding(
         psms_df[seq_cols[0]],
         min_length,
         max_length,
-        alphabet=alphabet
+        alphabet=alphabet,
+        le=le,
     )
     logger.debug("generating padded DF")
     seq1_padded = generate_padded_df(encoded_s1, psms_df.index)
@@ -150,6 +143,7 @@ def featurize_sequences(psms_df, seq_cols=["Seqar_Peptide1", "Seqar_Peptide2"], 
             min_length,
             max_length,
             alphabet=alphabet,
+            le=le,
         )
         seq2_padded = generate_padded_df(encoded_s2, psms_df.index)
     else:
@@ -168,18 +162,12 @@ def generate_padded_df(encoded_ar, index):
     Returns:
         dataframe, label encoded peptides as rows
     """
-    seqs_padded = pd.DataFrame(
-        np.array(list(encoded_ar)),
-        index=index
-    )
-    seqs_padded.columns = [
-        f"rnn_{str(i).zfill(2)}"
-        for i in np.arange(len(seqs_padded.iloc[0]))
-    ]
+    seqs_padded = pd.DataFrame(np.array(list(encoded_ar)), index=index)
+    seqs_padded.columns = [f"rnn_{str(i).zfill(2)}" for i in np.arange(len(seqs_padded.iloc[0]))]
     return seqs_padded
 
 
-def fraction_encoding(psms_df, rt_methods):
+def fraction_encoding(psms_df, rt_methods, levels=None):
     """
     Add the necessary fraction columns.
 
@@ -195,7 +183,11 @@ def fraction_encoding(psms_df, rt_methods):
     """
     for col in rt_methods:
         # encode the classes for the fractions 0-based
-        frac_unique = psms_df[col].drop_duplicates().sort_values()
+        frac_unique = (
+            pd.Series(levels[col])
+            if levels is not None
+            else (psms_df[col].drop_duplicates().sort_values())
+        )
         # get 0-based numbers
         frac_unique = pd.Series(np.arange(frac_unique.size), index=frac_unique)
         # add new column to dataframe
@@ -216,7 +208,7 @@ def fraction_encoding(psms_df, rt_methods):
             classes[class_i] = init_class_encoding
 
         # make categorical
-        frac_categorical = utils.to_categorical(psms_df[col + "_0based"])
+        frac_categorical = np.eye(nclasses, dtype=np.float32)[psms_df[col + "_0based"]]
 
         psms_df[col + "_1hot"] = list(frac_categorical)
         psms_df[col + "_ordinal"] = psms_df[col + "_0based"].map(classes)
@@ -233,5 +225,5 @@ def transform_RT(retention_times):
         ar-like, transformed retention times in minutes
     """
     if (retention_times > 720).sum() > 0:
-        retention_times = retention_times / 60.
+        retention_times = retention_times / 60.0
     return retention_times

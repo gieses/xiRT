@@ -1,0 +1,142 @@
+{
+  "adapter": {
+    "alpha": 4.0,
+    "factor": 4,
+    "learning_rate_ratio": 0.1,
+    "rank": 4
+  },
+  "allow_downloads": false,
+  "architecture": {
+    "dense_activation": "linear",
+    "dense_units": 16,
+    "embedding_dim": 8,
+    "gru_units": 16
+  },
+  "batch_size": 64,
+  "candidates": [
+    {
+      "dropout": 0.1,
+      "id": "reference",
+      "learning_rate": 0.001,
+      "scheduler": "cosine",
+      "weight_decay": 0.01
+    },
+    {
+      "dropout": 0.1,
+      "id": "lr_high",
+      "learning_rate": 0.003,
+      "scheduler": "cosine",
+      "weight_decay": 0.01
+    },
+    {
+      "dropout": 0.1,
+      "id": "lr_low",
+      "learning_rate": 0.0003,
+      "scheduler": "cosine",
+      "weight_decay": 0.01
+    },
+    {
+      "dropout": 0.0,
+      "id": "no_dropout",
+      "learning_rate": 0.001,
+      "scheduler": "cosine",
+      "weight_decay": 0.01
+    },
+    {
+      "dropout": 0.3,
+      "id": "high_dropout",
+      "learning_rate": 0.001,
+      "scheduler": "cosine",
+      "weight_decay": 0.01
+    },
+    {
+      "dropout": 0.1,
+      "id": "no_decay",
+      "learning_rate": 0.001,
+      "scheduler": "cosine",
+      "weight_decay": 0.0
+    },
+    {
+      "dropout": 0.1,
+      "id": "constant_lr",
+      "learning_rate": 0.001,
+      "scheduler": "constant",
+      "weight_decay": 0.01
+    },
+    {
+      "dropout": 0.1,
+      "id": "plateau_lr",
+      "learning_rate": 0.001,
+      "scheduler": "plateau",
+      "weight_decay": 0.01
+    }
+  ],
+  "datasets": [
+    "full_ecoli_modified",
+    "full_plink_modified",
+    "full_fa_cross_modified",
+    "full_fa_linear_modified",
+    "full_ecoli_linear_modified"
+  ],
+  "deterministic": true,
+  "device": "cuda:0",
+  "epochs": 30,
+  "esm": {
+    "checkpoint_sha256": "323dff9fbf3fef297a74f4f18b6528e6f2e599b0bcf72b6927516804015becea",
+    "filename": "data/weights/esmc_300m_2024_12_v0.pth",
+    "model": "esmc_300m",
+    "repository": "EvolutionaryScale/esmc-300m-2024-12",
+    "revision": "7f10b20ae75017b2dbc884070e03434515709a8d"
+  },
+  "esm_batch_size": 128,
+  "job_timeout_seconds": 14400,
+  "legacy_python": "benchmarks/.venv-legacy/bin/python",
+  "max_groups": 0,
+  "min_delta": 0.0001,
+  "modern_python": "benchmarks/.venv-modern/bin/python",
+  "patience": 8,
+  "precision": "bfloat16",
+  "pretrain_epochs": 30,
+  "pretraining": {
+    "dropout": 0.1,
+    "learning_rate": 0.001,
+    "strategy": "within_cohort_train_only",
+    "validation_fraction": 0.15,
+    "weight_decay": 0.01
+  },
+  "run_dir": "benchmarks/results/scheduled-v2",
+  "scheduler": {
+    "minimum_lr_ratio": 0.01,
+    "plateau_factor": 0.5,
+    "plateau_min_delta": 0.0001,
+    "plateau_patience": 3,
+    "warmup_fraction": 0.1
+  },
+  "schema_version": 1,
+  "seeds": [
+    17,
+    29,
+    43
+  ],
+  "split_seed": 20261101,
+  "tasks": [
+    "rp"
+  ],
+  "threads_per_job": 2,
+  "tuning_seeds": [
+    17,
+    29,
+    43
+  ],
+  "variants": [
+    "legacy_tf",
+    "pytorch",
+    "esm_frozen",
+    "esm_lora",
+    "esm_lokr",
+    "lokr_gru",
+    "lokr_linear",
+    "recurrent_full_finetune",
+    "recurrent_frozen_encoder"
+  ]
+}

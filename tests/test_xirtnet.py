@@ -1,242 +1,231 @@
-import os
+"""PyTorch network, checkpoint and scientific loss regression tests."""
+
+import copy
+from pathlib import Path
 
 import numpy as np
 import pytest
+import torch
 import yaml
 
-from xirt import xirtnet
+from xirt.training import make_optimizers, task_loss
+from xirt.xirtnet import params_to_df, read_checkpoint, xiRTNET
 
-fixtures_loc = os.path.join(os.path.dirname(__file__), 'fixtures')
+
+@pytest.fixture
+def params():
+    """Return a small legacy-shaped multi-task architecture."""
+    with open(Path(__file__).parent / "fixtures/xirt_params_3RT.yaml") as stream:
+        result = yaml.safe_load(stream)
+    result["learning"]["device"] = "cpu"
+    return result
 
 
-def test_xirt_class():
-    # simple test to check if the parameter files were parsed
-    xiRTconfig = yaml.load(open(os.path.join(fixtures_loc, "xirt_params_3RT.yaml")),
-                           Loader=yaml.FullLoader)
-    xirtnetwork = xirtnet.xiRTNET(
-        xiRTconfig,
-        input_dim=100,
-        embedding_dim=20
+def network(params, siamese=True, alphabet=25):
+    """Build a tiny network using the public compatibility API."""
+    result = xiRTNET(params, input_dim=6, embedding_dim=alphabet)
+    result.build_model(siamese=siamese, alphabet=alphabet)
+    result.compile()
+    return result
+
+
+@pytest.mark.parametrize("container", [list, tuple])
+def test_siamese_branch_containers(params, container):
+    params["predictions"] = {"fractions": [], "continues": ["rp"]}
+    model = network(params).model
+    first = np.array([[0, 0, 1, 2, 3, 4], [0, 1, 2, 3, 4, 5]])
+    second = first[::-1].copy()
+    inputs = container([first, second])
+    targets = np.ones((2, 1), dtype=np.float32)
+
+    np.testing.assert_allclose(model.predict(inputs), model.predict((first, second)))
+    np.testing.assert_allclose(
+        model.evaluate(inputs, targets), model.evaluate((first, second), targets)
     )
-    assert xirtnetwork.model is None
-    assert xirtnetwork.input_dim == 100
-    assert xirtnetwork.LSTM_p == xiRTconfig["LSTM"]
-    assert xirtnetwork.dense_p == xiRTconfig["dense"]
-    assert xirtnetwork.embedding_p == xiRTconfig["embedding"]
-    assert xirtnetwork.learning_p == xiRTconfig["learning"]
-    assert xirtnetwork.output_p == xiRTconfig["output"]
-    assert xirtnetwork.siamese_p == xiRTconfig["siamese"]
+    history = model.fit(
+        inputs, targets, validation_data=(inputs, targets), epochs=1, batch_size=2, verbose=0
+    ).history
+    assert len(history["loss"]) == len(history["val_loss"]) == 1
 
 
-def test_xirt_compilation():
-    xiRTconfig = yaml.load(open(os.path.join(fixtures_loc, "xirt_params_3RT.yaml")),
-                           Loader=yaml.FullLoader)
-    xirtnetwork = xirtnet.xiRTNET(
-        xiRTconfig,
-        input_dim=100,
-        embedding_dim=50,
+def test_single_branch_row_lists(params):
+    params["predictions"] = {"fractions": [], "continues": ["rp"]}
+    model = network(params, siamese=False).model
+    array = np.array([[0, 0, 1, 2, 3, 4], [0, 1, 2, 3, 4, 5]])
+    rows = array.tolist()
+    targets = np.ones((2, 1), dtype=np.float32)
+
+    np.testing.assert_allclose(model.predict(rows), model.predict(array))
+    np.testing.assert_allclose(model.predict((array,)), model.predict(array))
+    np.testing.assert_allclose(model.evaluate(rows, targets), model.evaluate(array, targets))
+    history = model.fit(
+        rows, targets, validation_data=(rows, targets), epochs=1, batch_size=2, verbose=0
+    ).history
+    assert len(history["loss"]) == len(history["val_loss"]) == 1
+
+
+@pytest.mark.parametrize("merge", ["add", "multiply", "average", "concatenate", "maximum"])
+@pytest.mark.parametrize("rnn", ["GRU", "LSTM"])
+def test_architecture(params, merge, rnn):
+    params["siamese"]["merge_type"] = merge
+    params["LSTM"]["type"] = rnn
+    params["LSTM"]["nlayers"] = 3
+    model = network(params).model
+    inputs = np.array([[0, 0, 1, 2, 3, 4], [0, 1, 2, 3, 4, 5]])
+    outputs = model.predict((inputs, inputs), batch_size=1)
+    assert [v.shape for v in outputs] == [(2, 10), (2, 9), (2, 1)]
+    assert np.isfinite(np.concatenate(outputs, axis=1)).all()
+    if merge != "concatenate":
+        swapped = model.predict((inputs[::-1].copy(), inputs))
+        original = model.predict((inputs, inputs[::-1].copy()))
+        for first, second in zip(original, swapped):
+            np.testing.assert_allclose(first, second, atol=1e-6)
+
+
+def test_padding_does_not_change_representation(params):
+    model = network(params).model.eval()
+    left = torch.tensor([[0, 0, 0, 1, 2, 3]])
+    right = torch.tensor([[1, 2, 3, 0, 0, 0]])
+    torch.testing.assert_close(model.encode(left), model.encode(right))
+    assert torch.equal(model.encode(torch.zeros_like(left)), torch.zeros(1, 10))
+
+
+def test_activity_regularization_is_included_in_evaluation_objective(params):
+    params["predictions"] = {"continues": ["rp"], "fractions": []}
+    params["LSTM"].update(lstm_bn=False, kernelregularizer_value=0.0, activityregularizer_value=0.5)
+    params["dense"]["dense_bn"] = [False] * params["dense"]["nlayers"]
+    params["dense"]["dropout"] = [0.0] * params["dense"]["nlayers"]
+    params["dense"]["regularizer_value"] = [0.0] * params["dense"]["nlayers"]
+    model = network(params).model
+    inputs = np.array([[0, 0, 1, 2, 3, 4], [0, 0, 2, 3, 4, 5]])
+    labels = (torch.ones(2, 1),)
+    model.train()
+    logits = model(torch.as_tensor(inputs), torch.as_tensor(inputs))
+    training_loss, _ = model._losses(logits, labels)
+    task = task_loss(logits["rp"], labels[0], "mse")
+    expected_penalty = 0.5 * sum(value.square().sum() / len(value) for value in model.activity)
+    assert expected_penalty.item() > 0
+    assert training_loss.item() == pytest.approx(task.item() + expected_penalty.item())
+    evaluation = model.evaluate((inputs, inputs), labels[0].numpy(), batch_size=2)
+    assert evaluation[0] == pytest.approx(training_loss.item())
+    assert model.training
+
+
+def test_training_checkpoint_and_singleton(params, tmp_path):
+    params["callbacks"]["callback_path"] = str(tmp_path)
+    net = network(params)
+    rng = np.random.default_rng(42)
+    x = (rng.integers(1, 25, (9, 6)), rng.integers(1, 25, (9, 6)))
+    y = [np.zeros((9, 10)), np.zeros((9, 9)), np.ones(9)]
+    before = copy.deepcopy(net.model.state_dict())
+    history = net.model.fit(
+        x,
+        y,
+        validation_data=(x, y),
+        epochs=2,
+        batch_size=4,
+        callbacks=net.get_callbacks("test"),
+        verbose=0,
+    ).history
+    assert len(history["val_loss"]) == 2
+    assert any(not torch.equal(value, net.model.state_dict()[key]) for key, value in before.items())
+    restored = xiRTNET(params, 6, 25)
+    restored.load_model(tmp_path / "xirt_model_test.pt")
+    net.model.load_weights(tmp_path / "xirt_weights_test.pt")
+    for first, second in zip(net.model.predict(x), restored.model.predict(x)):
+        np.testing.assert_allclose(first, second)
+    assert len(net.model.evaluate(x, y)) == len(net.model.metrics_names)
+    assert read_checkpoint(tmp_path / "xirt_model_test.pt")["format_version"] == 2
+    assert (tmp_path / "xirt_epochlog_test.log").exists()
+
+
+@pytest.mark.parametrize(
+    "name,cls",
+    [
+        ("adam", torch.optim.Adam),
+        ("adamw", torch.optim.AdamW),
+        ("sgd", torch.optim.SGD),
+        ("rmsprob", torch.optim.RMSprop),
+        ("nadam", torch.optim.NAdam),
+    ],
+)
+def test_optimizer(params, name, cls):
+    params["learning"]["optimizer"] = name
+    assert isinstance(network(params).model.optimizer, cls)
+
+
+def test_muon_parameter_partition(params):
+    model = network(params).model
+    opts = make_optimizers(model, {"optimizer": "muon", "learningrate": 0.001})
+    ids = [id(p) for opt in opts for group in opt.param_groups for p in group["params"]]
+    assert len(ids) == len(set(ids)) == len(list(model.parameters()))
+    muon_ids = {id(p) for group in opts[0].param_groups for p in group["params"]}
+    assert id(model.embedding.weight) not in muon_ids
+    assert all(id(p) not in muon_ids for p in model.outputs.parameters())
+    model.optimizers = opts
+    x = np.ones((3, 6), dtype=int)
+    model.fit((x, x), [np.zeros((3, 10)), np.zeros((3, 9)), np.ones(3)], batch_size=2, verbose=0)
+
+
+@pytest.mark.parametrize(
+    "loss,focal",
+    [
+        ("binary_crossentropy", "binary_focal"),
+        ("categorical_crossentropy", "categorical_focal"),
+    ],
+)
+def test_focal_limit_and_extreme_logits(loss, focal):
+    logits = torch.tensor([[1000.0, -1000.0], [-1000.0, 1000.0]], requires_grad=True)
+    targets = torch.tensor([[0.0, 1.0], [1.0, 0.0]])
+    torch.testing.assert_close(
+        task_loss(logits, targets, loss), task_loss(logits, targets, focal, gamma=0)
     )
-    xirtnetwork.build_model(siamese=True)
-    xirtnetwork.compile()
-    assert xirtnetwork.model._is_compiled is True
+    value = task_loss(logits, targets, focal)
+    value.backward()
+    assert torch.isfinite(value)
+    assert torch.isfinite(logits.grad).all()
 
 
-def test_xirt_compilation_sgd():
-    xiRTconfig = yaml.load(open(os.path.join(fixtures_loc, "xirt_params_3RT.yaml")),
-                           Loader=yaml.FullLoader)
-    xiRTconfig["learning"]["optimizer"] = "sgd"
-    xirtnetwork = xirtnet.xiRTNET(
-        xiRTconfig,
-        input_dim=100,
-        embedding_dim=20,
+def test_adjust_preserves_encoder(params):
+    net = network(params)
+    old = net.model.count_params()
+    embedding = net.model.embedding.weight.detach().clone()
+    net.output_p["scx-dimension"] = 5
+    net.output_p["hsax-dimension"] = 5
+    net.adjust_model()
+    assert old - net.model.count_params() == 99
+    torch.testing.assert_close(embedding, net.model.embedding.weight)
+
+
+def test_errors_are_explicit(params, tmp_path):
+    model = network(params).model
+    with pytest.raises(ValueError, match="integer indices"):
+        model.predict((np.ones((2, 6)) * 0.5, np.ones((2, 6))))
+    with pytest.raises(ValueError, match="matching sample"):
+        model.predict((np.ones((2, 6)), np.ones((3, 6))))
+    with pytest.raises(ValueError, match="HDF5"):
+        model.load_weights("legacy.h5")
+    with pytest.raises(ValueError, match="empty"):
+        model.fit((np.empty((0, 6)), np.empty((0, 6))), [])
+    with pytest.raises(ValueError, match="Unsupported optimizer"):
+        make_optimizers(model, {"optimizer": "unknown", "learningrate": 0.001})
+    params["dense"]["dropout"] = []
+    with pytest.raises(ValueError, match="must contain"):
+        xiRTNET(params, 6, 25)
+
+
+def test_embedding_route_and_empty_predictions(params):
+    params["encoder"] = {"route": "esm-c", "embedding_dim": 4}
+    model = network(params).model
+    arrays = model.predict((np.empty((0, 4)), np.empty((0, 4))))
+    assert [a.shape for a in arrays] == [(0, 10), (0, 9), (0, 1)]
+    with pytest.raises(ValueError, match="shape"):
+        model.predict((np.ones((2, 3)), np.ones((2, 4))))
+
+
+def test_params_to_df(tmp_path):
+    table = params_to_df(
+        Path(__file__).parent / "fixtures/xirt_params_3RT.yaml", tmp_path / "params.csv"
     )
-    xirtnetwork.build_model(siamese=True)
-    xirtnetwork.compile()
-    assert xirtnetwork.model.optimizer._name.lower() == "sgd"
-
-
-def test_xirt_compilation_rmsprop():
-    xiRTconfig = yaml.load(open(os.path.join(fixtures_loc, "xirt_params_3RT.yaml")),
-                           Loader=yaml.FullLoader)
-    xiRTconfig["learning"]["optimizer"] = "rmsprob"
-    xirtnetwork = xirtnet.xiRTNET(
-        xiRTconfig,
-        input_dim=100,
-        embedding_dim=20
-    )
-    xirtnetwork.build_model(siamese=True)
-    xirtnetwork.compile()
-    assert xirtnetwork.model.optimizer._name.lower() == "rmsprop"
-
-
-def test_xirt_compilation_nadam():
-    xiRTconfig = yaml.load(open(os.path.join(fixtures_loc, "xirt_params_3RT.yaml")),
-                           Loader=yaml.FullLoader)
-    xiRTconfig["learning"]["optimizer"] = "nadam"
-    xirtnetwork = xirtnet.xiRTNET(
-        xiRTconfig,
-        input_dim=100,
-        embedding_dim=20
-    )
-    xirtnetwork.build_model(siamese=True)
-    xirtnetwork.compile()
-    assert xirtnetwork.model.optimizer._name.lower() == "nadam"
-
-
-def test_xirt_compilation_siameseoptions():
-    # test the usage of different combination layers
-    xiRTconfig = yaml.load(open(os.path.join(fixtures_loc, "xirt_params_3RT.yaml")),
-                           Loader=yaml.FullLoader)
-
-    merge_options = ["add", "multiply", "average", "concatenate", "maximum"]
-    for merge_opt in merge_options:
-        xiRTconfig["siamese"]["merge_type"] = merge_opt
-        xirtnetwork = xirtnet.xiRTNET(
-            xiRTconfig,
-            input_dim=100,
-            embedding_dim=20
-        )
-        xirtnetwork.build_model(siamese=True)
-        xirtnetwork.compile()
-        assert xirtnetwork.model._is_compiled
-
-
-def test_xirt_compilation_lstm_options():
-    # test if compilaton works for all options (gpu not added ...)
-    xiRTconfig = yaml.load(open(os.path.join(fixtures_loc, "xirt_params_3RT.yaml")),
-                           Loader=yaml.FullLoader)
-    rnn_options = ["LSTM", "GRU"]  # "CuDNNGRU", "CuDNNLSTM"
-    for rnn_type in rnn_options:
-        xiRTconfig["LSTM"]["type"] = rnn_type
-        xirtnetwork = xirtnet.xiRTNET(
-            xiRTconfig,
-            input_dim=100,
-            embedding_dim=20,
-        )
-        xirtnetwork.build_model(siamese=True)
-        xirtnetwork.compile()
-        assert xirtnetwork.model._is_compiled
-
-
-# def test_xirt_train():
-#     # read data
-#     matches_df = pd.read_csv(os.path.join(fixtures_loc, "DSS_xisearch_fdr_CSM50percent.csv"),
-#     nrows=100)
-#     matches_df = matches_df.sample(frac=0.5)
-#
-#     # standard processing before training
-#     xiRTconfig = yaml.load(open(os.path.join(fixtures_loc, "xirt_params_3RT.yaml")),
-#                            Loader=yaml.FullLoader)
-#     training_data = xr.preprocess(matches_df, "crosslink", max_length=-1, cl_residue=False,
-#                                   fraction_cols=["SCX", "hSAX"])
-#     training_data.set_fdr_mask(fdr_cutoff=0.05)
-#     training_data.set_unique_shuffled_sampled_training_idx()
-#     training_data.psms["RP"] = training_data.psms["RP"] / 60.0
-#     xirtnetwork = xirtnet.xiRTNET(xiRTconfig, input_dim=training_data.features2.shape[1])
-#     # TODO train network
-#     assert True
-
-
-def test_get_callbacks(tmpdir):
-    # test currently excludes tensorboard, all other callbacks sum up to 6 (2x ModelCheckpoint)
-    xiRTconfig = yaml.load(open(os.path.join(fixtures_loc, "xirt_params_3RT.yaml")),
-                           Loader=yaml.FullLoader)
-    xirtnetwork = xirtnet.xiRTNET(
-        xiRTconfig,
-        input_dim=100,
-        embedding_dim=20
-    )
-    xirtnetwork.callback_p["callback_path"] = os.path.abspath(tmpdir.mkdir("tmp"))
-    callbacks = xirtnetwork.get_callbacks("test")
-    assert len(callbacks) == 6
-
-
-def test_init_regularizer_l1():
-    reg_tmp = xirtnet.xiRTNET._init_regularizer("l1", 0.1)
-    assert np.allclose([reg_tmp.get_config()["l1"]], [0.1], 0.001)
-
-
-def test_init_regularizer_l2():
-    reg_tmp = xirtnet.xiRTNET._init_regularizer("l2", 0.1)
-    assert np.allclose([reg_tmp.get_config()["l2"]], [0.1], 0.001)
-
-
-def test_init_regularizer_l1l2():
-    reg_tmp = xirtnet.xiRTNET._init_regularizer("l1l2", 0.1)
-    assert np.allclose([reg_tmp.get_config()["l1"]], [0.1], 0.001)
-    assert np.allclose([reg_tmp.get_config()["l2"]], [0.1], 0.001)
-
-
-def test_init_regularizer_l3():
-    # test raising error for l3 (doesnt exist)
-    with pytest.raises(KeyError):
-        xirtnet.xiRTNET._init_regularizer("l3", 0.1)
-
-
-def test_print_layers(capsys):
-    # simple test that checks if key info is contained in the printed output
-    xiRTconfig = yaml.load(open(os.path.join(fixtures_loc, "xirt_params_3RT.yaml")),
-                           Loader=yaml.FullLoader)
-    xirtnetwork = xirtnet.xiRTNET(
-        xiRTconfig,
-        input_dim=10,
-        embedding_dim=20
-    )
-    xirtnetwork.build_model(siamese=True)
-    xirtnetwork.print_layers()
-    captured = capsys.readouterr()
-    assert "rp" in captured.out
-    assert "siamese" in captured.out
-
-
-def test_print_parameters(capsys):
-    # simple test that checks if key info is contained in the printed output
-    xiRTconfig = yaml.load(open(os.path.join(fixtures_loc, "xirt_params_3RT.yaml")),
-                           Loader=yaml.FullLoader)
-    xirtnetwork = xirtnet.xiRTNET(
-        xiRTconfig,
-        input_dim=10,
-        embedding_dim=20,
-    )
-    xirtnetwork.build_model(siamese=True)
-    xirtnetwork.get_param_overview()
-    captured = capsys.readouterr()
-    assert "Total params:" in captured.out
-    assert "Trainable params:" in captured.out
-    assert "Non-trainable params:" in captured.out
-
-
-def test_params_to_df(tmpdir):
-    # take yaml file and test to df function
-    p = tmpdir.mkdir("tmp").join("params.csv")
-    params_df = xirtnet.params_to_df(os.path.join(fixtures_loc, "xirt_params_3RT.yaml"), p)
-    assert os.path.isfile(p)
-    assert not params_df.empty
-    os.remove(p)
-
-
-def test_adjust():
-    xiRTconfig = yaml.load(open(os.path.join(fixtures_loc, "xirt_params_3RT.yaml")),
-                           Loader=yaml.FullLoader)
-    xirtnetwork = xirtnet.xiRTNET(
-        xiRTconfig,
-        input_dim=100,
-        embedding_dim=20,
-    )
-    xirtnetwork.build_model(siamese=True)
-    # was 9 in config
-    xirtnetwork.output_p["scx-dimension"] = 5
-    # was 10
-    xirtnetwork.output_p["hsax-dimension"] = 5
-
-    # difference should be:
-    # hsax: 10 (neurons) * 10 = 100 + 10 = 110
-    # hsax: 10 (neurons) * 5 = 50 + 5 = 55
-    # scx: 10 (neurons) * 5 = 50 + 5 = 55
-    # scx: 10 (neurons) * 9 = 90 + 9 = 99
-    exp_diff = 110 + 99 - 55 - 55
-    params_old = xirtnetwork.model.count_params()
-
-    # adjust model
-    xirtnetwork.adjust_model()
-    assert (params_old - xirtnetwork.model.count_params()) == exp_diff
+    assert not table.empty
+    assert (tmp_path / "params.csv").exists()

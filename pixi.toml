@@ -1,0 +1,18 @@
+[workspace]
+name = "xirt"
+channels = ["conda-forge"]
+platforms = ["linux-64", "osx-arm64"]
+requires-pixi = ">=0.82"
+
+[dependencies]
+python = "3.13.*"
+uv = "0.13.*"
+
+[tasks]
+sync = "uv sync --locked --python 3.13 --extra cpu --group dev --group docs --extra tracking"
+test = "make test"
+lint = "make lint"
+docs = "make docs"
+build = "make build"
+check = "make check"
+benchmark-plan = "bash run.sh plan"

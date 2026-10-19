@@ -1,5 +1,12 @@
-include README.md LICENSE
-recursive-include documentation
-exclude tests/sample_data sample_datainclude versioneer.py
-include xirt/_version.py
-include versioneer.py
+include README.md CHANGELOG.md LICENCE pyproject.toml uv.lock mkdocs.yml
+recursive-include docs *.md *.yaml *.png
+recursive-include examples *.py *.md *.csv
+prune examples/results
+recursive-include xirt/data_pipelines/benchmarks *.py
+include .python-version pixi.toml pixi.lock
+prune tests
+prune benchmark
+prune benchmarks
+prune benchmark-tf-torch
+prune documentation
+global-exclude __pycache__ *.py[cod]

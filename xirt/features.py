@@ -38,8 +38,9 @@ def create_simple_features(df, seq_column="Sequence"):
     return ff_df
 
 
-def create_all_features(df, alphabet=parser.std_amino_acids, pos_specific=False, lcp=0.2,
-                        correct=True):
+def create_all_features(
+    df, alphabet=parser.std_amino_acids, pos_specific=False, lcp=0.2, correct=True
+):
     """
     Compute all features for the given sequence column of the dataframe.
 
@@ -90,8 +91,9 @@ def create_all_features(df, alphabet=parser.std_amino_acids, pos_specific=False,
     orig_sequences = orig_sequences.apply(sequences.replace_numbers)
     orig_sequences = orig_sequences.apply(sequences.rewrite_modsequences)
 
-    aa_df = get_AA_matrix(orig_sequences, pos_specific=pos_specific, lcp=lcp,
-                          correct=correct, residues=alphabet)
+    aa_df = get_AA_matrix(
+        orig_sequences, pos_specific=pos_specific, lcp=lcp, correct=correct, residues=alphabet
+    )
     aa_df.index = ff_df.index
     ff_df = pd.concat([ff_df, aa_df], axis=1)
     return ff_df
@@ -131,7 +133,7 @@ def get_loglength(seq):
     seq: str,
           peptide sequence
     """
-    return (np.log(len(seq)))
+    return np.log(len(seq))
 
 
 def get_shortest_distance(seq, opt="nterm"):
@@ -140,7 +142,7 @@ def get_shortest_distance(seq, opt="nterm"):
     Parameters:
         seq: str, peptide sequence
     """
-    return (1. * add_shortest_distance(seq, opt=opt))
+    return 1.0 * add_shortest_distance(seq, opt=opt)
 
 
 def get_cterm_residue_indicator(seq):
@@ -182,10 +184,13 @@ def get_estimated_charge(seq):
     Returns:
         float, estimated charge
     """
-    return (seq.count("D") + seq.count("E") + (0.3 * seq.count("F")
-                                               + 0.8 * seq.count("W")
-                                               + 0.6 * seq.count("Y")) - seq.count("K") - seq.count(
-        "R"))
+    return (
+        seq.count("D")
+        + seq.count("E")
+        + (0.3 * seq.count("F") + 0.8 * seq.count("W") + 0.6 * seq.count("Y"))
+        - seq.count("K")
+        - seq.count("R")
+    )
 
 
 def get_residue_charge(seq):
@@ -218,9 +223,9 @@ def get_aa_count(pepseq, residue, pos=-1, direction="N"):
         return pepseq.count(residue)
     else:
         if direction == "N":
-            return pepseq[pos:pos + 1].count(residue)
+            return pepseq[pos : pos + 1].count(residue)
         else:
-            return pepseq[-pos - 1:][0].count(residue)
+            return pepseq[-pos - 1 :][0].count(residue)
 
 
 def add_shortest_distance(orig_sequence, opt="cterm"):
@@ -260,7 +265,7 @@ def extract_nterm_mods(seq):
         ar-like, list of modifications
     """
     # matches all nterminal mods, e.g. glD or acA
-    nterm_pattern = re.compile(r'^([a-z]+)([A-Z])')
+    nterm_pattern = re.compile(r"^([a-z]+)([A-Z])")
     mods = []
     # test each sequence for non-AA letters
     for ii, seqi in enumerate(seq):
@@ -297,12 +302,10 @@ def get_patches(seq, aa_set1=["D", "E"], aa_set2=None, counts_only=True):
     # this representation is used to be easily also used if not only
     # the counts but also the patterns are requested.
     if aa_set2 is None:
-        ac_combs = ["".join(i) for i in
-                    itertools.combinations_with_replacement(aa_set1, 2)]
+        ac_combs = ["".join(i) for i in itertools.combinations_with_replacement(aa_set1, 2)]
         pattern = re.compile("[" + "|".join(ac_combs) + "]{2,}")
     else:
-        ac_combs = ["".join(i) for i in
-                    list(itertools.product(aa_set1, aa_set2))]
+        ac_combs = ["".join(i) for i in list(itertools.product(aa_set1, aa_set2))]
         ac_combs += ["".join(reversed(i)) for i in list(itertools.product(aa_set1, aa_set2))]
         p1 = "|".join(aa_set1)
         p2 = "|".join(aa_set2)
@@ -413,10 +416,10 @@ def get_turn_indicator(seq):
         return 0.0
 
     elif len(starts) == 1:
-        return starts[0] / (len(seq) * 1.)
+        return starts[0] / (len(seq) * 1.0)
 
     else:
-        return np.mean(np.diff(starts)) / (len(seq) * 1.)
+        return np.mean(np.diff(starts)) / (len(seq) * 1.0)
 
 
 def get_weight(seq):
@@ -433,8 +436,9 @@ def get_weight(seq):
     return bio_seq.molecular_weight()
 
 
-def get_AA_matrix(sequences, pos_specific=False, ntermini=5, lcp=1,
-                  correct=False, residues=parser.std_amino_acids):
+def get_AA_matrix(
+    sequences, pos_specific=False, ntermini=5, lcp=1, correct=False, residues=parser.std_amino_acids
+):
     """Count the amino acid in a peptide sequence.
 
     Counting uses the pyteomics amino_acid composition. Modified residues of the pattern "modA"
@@ -481,14 +485,12 @@ def get_AA_matrix(sequences, pos_specific=False, ntermini=5, lcp=1,
         # init dic with counts
         # ini dataframe with same row index as df, to overwrite counts
         count_dic = {
-            j + res + str(i): 0
-            for res in residues
-            for i in range(ntermini)
-            for j in ["N"]
+            j + res + str(i): 0 for res in residues for i in range(ntermini) for j in ["N"]
         }
 
-        count_dic.update({j + res + str(i): 0 for res in residues for i in
-                          range(1, ntermini) for j in ["C"]})
+        count_dic.update(
+            {j + res + str(i): 0 for res in residues for i in range(1, ntermini) for j in ["C"]}
+        )
 
         count_df = pd.DataFrame(np.zeros((df.shape[0], nfeatures)))
         count_df.columns = sorted(count_dic.keys())
@@ -501,7 +503,7 @@ def get_AA_matrix(sequences, pos_specific=False, ntermini=5, lcp=1,
             # counts when neceessary
             seq = rowi["Sequence"]
             n = len(seq)
-            tmp_ntermini = np.floor(n / 2.) if (n - 2 * ntermini) < 0 else ntermini
+            tmp_ntermini = np.floor(n / 2.0) if (n - 2 * ntermini) < 0 else ntermini
             # iterate over number of termini, add count if desired (residues)
             for i in range(int(tmp_ntermini)):
                 if seq[i] in residues_hash:
@@ -520,7 +522,7 @@ def get_AA_matrix(sequences, pos_specific=False, ntermini=5, lcp=1,
         new_df = aa_count_df.join(count_df)
         # iterate over columns
         for res in residues:
-            tmp_df = new_df.filter(regex=r"(N|C){}\d".format(res))
+            tmp_df = new_df.filter(regex=rf"(N|C){res}\d")
             sums = tmp_df.sum(axis=1)
             # correct the internal counts
             new_df[res] = new_df[res] - sums
@@ -530,7 +532,7 @@ def get_AA_matrix(sequences, pos_specific=False, ntermini=5, lcp=1,
     # multiply each raw value by a correction term, see pyteomics docu
     # for details ("lcp")
     if correct:
-        cfactor = 1. + lcp * np.log(df["Sequence"].apply(len))
+        cfactor = 1.0 + lcp * np.log(df["Sequence"].apply(len))
         new_df = new_df.mul(cfactor, axis=0)
 
     new_df = new_df.replace(np.nan, 0)
@@ -568,16 +570,17 @@ def compute_prediction_errors(obs_df, preds_df, tasks, frac_cols=[], single_pred
             for task_i in tasks:
                 # we need to take take of the class mapping, because fractions are not equal to cls
                 if task_i in class_columns:
-                    preds_df[f"{task_i}-error{suffix}"] = \
-                        obs_df[task_i+"_0based"] - \
-                        preds_df[f"{task_i}-prediction{suffix}"]
+                    preds_df[f"{task_i}-error{suffix}"] = (
+                        obs_df[task_i + "_0based"] - preds_df[f"{task_i}-prediction{suffix}"]
+                    )
                 else:
                     # continously measured RT dont have a constraint
-                    preds_df[f"{task_i}-error{suffix}"] = \
+                    preds_df[f"{task_i}-error{suffix}"] = (
                         obs_df[task_i] - preds_df[f"{task_i}-prediction{suffix}"]
+                    )
     else:
         for task_i in tasks:
-            preds_df[f"{task_i}-error"] = obs_df[task_i] - preds_df[task_i+"-prediction"]
+            preds_df[f"{task_i}-error"] = obs_df[task_i] - preds_df[task_i + "-prediction"]
 
 
 def add_interactions(feature_df, degree=2, interactions_only=True):
@@ -609,8 +612,9 @@ def add_interactions(feature_df, degree=2, interactions_only=True):
     dfs_feats = []
     for df in df_tmp:
         # create the feature generator
-        feng = PolynomialFeatures(degree=degree, interaction_only=interactions_only,
-                                  include_bias=False)
+        feng = PolynomialFeatures(
+            degree=degree, interaction_only=interactions_only, include_bias=False
+        )
         # store columns and get dataframe
         columns_peps = df.columns
         feature_df_peps = pd.DataFrame(feng.fit_transform(df))
