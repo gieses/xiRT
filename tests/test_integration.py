@@ -11,6 +11,7 @@ import pandas as pd
 import pytest
 import yaml
 
+from xirt import __version__
 from xirt.__main__ import xirt_runner
 from xirt.config import NetworkConfig
 from xirt.xirtnet import read_checkpoint, xiRTNET
@@ -99,7 +100,7 @@ def test_generated_default_config_and_version(tmp_path):
     process = subprocess.run(
         [sys.executable, "-m", "xirt", "--version"], check=True, text=True, capture_output=True
     )
-    assert process.stdout.strip().endswith("2.0.0")
+    assert process.stdout.split()[-1] == __version__
     learning_path = tmp_path / "learning.yaml"
     subprocess.run(
         [

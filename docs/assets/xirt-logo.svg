@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 510 120" role="img" aria-labelledby="title description">
+  <title id="title">xiRT</title>
+  <desc id="description">Crosslinked peptide-chain symbol and xiRT wordmark. Peptide retention-time prediction.</desc>
+  <style>
+    .name { fill: #123c50; }
+    .tagline { fill: #526675; }
+    @media (prefers-color-scheme: dark) {
+      .name { fill: #e5edf3; }
+      .tagline { fill: #b2c4d2; }
+    }
+  </style>
+  <defs>
+    <linearGradient id="background" x2="1" y2="1">
+      <stop stop-color="#174c64"/>
+      <stop offset="1" stop-color="#102e43"/>
+    </linearGradient>
+  </defs>
+  <g transform="translate(5 12)">
+    <rect x="3" y="3" width="90" height="90" rx="24" fill="url(#background)"/>
+    <path d="m19 28 14 12 15-12 15 12 14-12" fill="none" stroke="#60dfca" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="m19 68 14-12 15 12 15-12 14 12" fill="none" stroke="#97c9f4" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="m33 40 30 16" stroke="#fff" stroke-width="4" stroke-linecap="round"/>
+    <g fill="#60dfca">
+      <circle cx="19" cy="28" r="4"/>
+      <circle cx="48" cy="28" r="4"/>
+      <circle cx="63" cy="40" r="4"/>
+      <circle cx="77" cy="28" r="4"/>
+    </g>
+    <g fill="#97c9f4">
+      <circle cx="19" cy="68" r="4"/>
+      <circle cx="33" cy="56" r="4"/>
+      <circle cx="48" cy="68" r="4"/>
+      <circle cx="77" cy="68" r="4"/>
+    </g>
+    <g fill="#fff">
+      <circle cx="33" cy="40" r="4.5"/>
+      <circle cx="63" cy="56" r="4.5"/>
+    </g>
+  </g>
+  <text class="name" x="124" y="74" font-family="Inter, Aptos, Segoe UI, Arial, sans-serif" font-size="72" font-weight="750" letter-spacing="-3">xiRT</text>
+  <text class="tagline" x="127" y="102" font-family="Inter, Aptos, Segoe UI, Arial, sans-serif" font-size="17">Peptide retention-time prediction</text>
+</svg>

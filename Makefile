@@ -34,6 +34,7 @@ build: ## Build wheel + sdist and validate metadata
 
 docs: ## Build documentation with strict validation
 	$(RUN) mkdocs build --strict
+	$(RUN) python .github/scripts/check_docs_links.py
 
 serve-docs: ## Serve live-reloading docs at localhost:8000
 	$(RUN) mkdocs serve --dev-addr "$(HOST):$(DOCS_PORT)"
