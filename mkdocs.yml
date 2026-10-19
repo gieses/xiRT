@@ -1,31 +1,47 @@
 site_name: xiRT 2.0
-site_description: Scientific retention-time prediction with PyTorch and optional local ESM-C
+site_description: Retention-time prediction for linear and crosslinked peptides with PyTorch
 site_url: https://gieses.github.io/xiRT/
 repo_url: https://github.com/gieses/xiRT
 repo_name: gieses/xiRT
 edit_uri: edit/master/docs/
 docs_dir: docs
 strict: true
+validation:
+  links:
+    anchors: warn
 theme:
   name: material
+  language: en
+  logo: assets/xirt-mark.svg
+  favicon: assets/xirt-mark.svg
+  font: false
   features:
+    - navigation.tabs
     - navigation.sections
     - navigation.top
+    - navigation.footer
+    - search.suggest
+    - search.highlight
+    - content.tabs.link
     - content.code.copy
     - content.action.edit
   palette:
-    - scheme: default
-      primary: indigo
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: custom
       accent: teal
       toggle:
         icon: material/brightness-7
         name: Switch to dark mode
-    - scheme: slate
-      primary: indigo
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: custom
       accent: teal
       toggle:
         icon: material/brightness-4
         name: Switch to light mode
+extra_css:
+  - stylesheets/extra.css
 plugins:
   - search
   - mkdocstrings:
@@ -42,27 +58,34 @@ plugins:
 markdown_extensions:
   - admonition
   - attr_list
+  - md_in_html
   - tables
   - toc:
       permalink: true
   - pymdownx.details
   - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
   - pymdownx.highlight:
       anchor_linenums: true
 nav:
-  - Overview: index.md
-  - Installation and CLI: getting-started.md
-  - Training notebooks: tutorials.md
-  - Scientific configuration: configuration.md
-  - Outputs and prediction provenance: results.md
-  - Migration from 1.x: migration.md
-  - ESM-C and adapters: embeddings.md
-  - Recurrent fine-tuning: fine-tuning.md
-  - Experiment tracking: tracking.md
-  - API reference: api.md
+  - Home: index.md
+  - Get started:
+      - Installation and CLI: getting-started.md
+      - Training notebooks: tutorials.md
+      - Migration from 1.x: migration.md
+  - User guide:
+      - Scientific configuration: configuration.md
+      - Outputs and provenance: results.md
+      - Recurrent fine-tuning: fine-tuning.md
+      - Experiment tracking: tracking.md
+      - ESM-C and adapters: embeddings.md
   - Benchmarks:
       - Protocol and archives: benchmarks.md
       - TF versus PyTorch: benchmarks/tf-torch.md
       - Native fine-tuning: benchmarks/fine-tune-torch.md
-  - Development and release: development.md
-  - References: references.md
+  - Reference:
+      - Python API: api.md
+      - Citation and references: references.md
+  - Contributing:
+      - Development and release: development.md

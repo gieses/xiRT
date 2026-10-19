@@ -1,5 +1,5 @@
 include README.md CHANGELOG.md LICENCE pyproject.toml uv.lock mkdocs.yml
-recursive-include docs *.md *.yaml *.png
+recursive-include docs *.md *.yaml *.png *.svg *.css
 recursive-include examples *.py *.md *.csv
 prune examples/results
 recursive-include xirt/data_pipelines/benchmarks *.py

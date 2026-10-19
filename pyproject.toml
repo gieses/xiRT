@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "xirt-torch"
-version = "2.0.0"
+version = "2.0.1"
 description = "Multi-dimensional retention time prediction for linear and crosslinked peptides"
 readme = "README.md"
 requires-python = ">=3.12,<3.15"

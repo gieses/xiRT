@@ -29,7 +29,7 @@ version, benchmark revision, and upstream embedding model when applicable.
 - [Official GitHub Pages custom workflows](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages).
 - [Predictive R² definition](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.r2_score.html):
   this is not squared Pearson correlation.
-- [ESM upstream implementation and model documentation](https://github.com/evolutionaryscale/esm).
+- [ESM upstream implementation and model documentation](https://github.com/Biohub/esm).
   xiRT currently supports SDK 3.2.x; the upstream main branch may describe newer,
   incompatible APIs and different model terms. Consult the precise downloaded
   model card and versioned SDK sources before using or redistributing weights.

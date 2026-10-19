@@ -102,7 +102,10 @@ jobs:
       - name: Install documentation dependencies
         run: |
           uv sync --locked --extra cpu --group docs
-      - run: uv run --no-sync mkdocs build --strict
+      - name: Build documentation and check site and PyPI links
+        run: |
+          uv run --no-sync mkdocs build --strict
+          uv run --no-sync python .github/scripts/check_docs_links.py
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: documentation-site

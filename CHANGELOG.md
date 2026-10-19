@@ -1,5 +1,20 @@
 # Changelog
 
+## [2.0.1] - 2026-10-19
+
+### Changed
+
+- Refresh the Material documentation with responsive layouts, light and dark
+  palettes, clearer navigation, and an original crosslinked-peptide logo.
+- Update the README with installation commands, notebook links, and measured
+  benchmark results.
+- Use absolute documentation and image URLs in the package description so
+  links work on PyPI as well as GitHub.
+- Check generated documentation links, anchors, and package-description URLs
+  before deployment.
+
+The scientific models, dependencies, and benchmark results are unchanged.
+
 ## [2.0.0] - 2026-10-19
 
 ### Changed
