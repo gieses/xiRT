@@ -1,0 +1,39 @@
+minimum_pre_commit_version: "4.6.2"
+default_language_version:
+  python: python3.13
+exclude: '^(benchmark-tf-torch/|benchmarks/results/|documentation/)'
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: 3e8a8703264a2f4a69428a0aa4dcb512790b2c8c # v6.0.0
+    hooks:
+      - id: check-toml
+      - id: check-yaml
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: [--maxkb=1024]
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+  - repo: local
+    hooks:
+      - id: ruff-check
+        name: Ruff lint (locked uv environment)
+        entry: uv run --no-sync ruff check --fix
+        language: system
+        types: [python]
+        files: '^(xirt/|tests/|examples/|\.github/scripts/)'
+      - id: ruff-format
+        name: Ruff format
+        entry: uv run --no-sync ruff format
+        language: system
+        types: [python]
+        files: '^(xirt/|tests/|examples/|\.github/scripts/)'
+      - id: marimo-check
+        name: Marimo notebook dataflow
+        entry: uv run --no-sync marimo check --strict
+        language: system
+        files: '^(xirt/data_pipelines/benchmarks/tf_torch/analyze_results\.py|examples/(train_predict|fine_tune)\.py)$'
+      - id: bash-syntax
+        name: Bash syntax
+        entry: bash -n
+        language: system
+        files: '^run\.sh$'

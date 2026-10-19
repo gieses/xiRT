@@ -1,0 +1,68 @@
+site_name: xiRT 2.0
+site_description: Scientific retention-time prediction with PyTorch and optional local ESM-C
+site_url: https://gieses.github.io/xiRT/
+repo_url: https://github.com/gieses/xiRT
+repo_name: gieses/xiRT
+edit_uri: edit/master/docs/
+docs_dir: docs
+strict: true
+theme:
+  name: material
+  features:
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+    - content.action.edit
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: teal
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: teal
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: ["."]
+          options:
+            docstring_style: google
+            show_docstring_examples: false
+            show_source: false
+            show_signature_annotations: true
+            separate_signature: true
+            show_root_heading: true
+markdown_extensions:
+  - admonition
+  - attr_list
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+nav:
+  - Overview: index.md
+  - Installation and CLI: getting-started.md
+  - Training notebooks: tutorials.md
+  - Scientific configuration: configuration.md
+  - Outputs and prediction provenance: results.md
+  - Migration from 1.x: migration.md
+  - ESM-C and adapters: embeddings.md
+  - Recurrent fine-tuning: fine-tuning.md
+  - Experiment tracking: tracking.md
+  - API reference: api.md
+  - Benchmarks:
+      - Protocol and archives: benchmarks.md
+      - TF versus PyTorch: benchmarks/tf-torch.md
+      - Native fine-tuning: benchmarks/fine-tune-torch.md
+  - Development and release: development.md
+  - References: references.md

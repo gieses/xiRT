@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "use_case": "full_ecoli_modified",
+  "protocol_sha256": "1cbf390d9b83fe747adcf9dae1a8f9921ac1373fcd9c818523212c99b0bb2dc2",
+  "source_snapshot_sha256": "be59996d188bf76e19a99f4fd40e99675dd143170a1bf3d7cdf74630349b6e67",
+  "prediction_origin": "regenerated from frozen selected checkpoints",
+  "models": [
+    "legacy_tf",
+    "pytorch"
+  ],
+  "seeds": [
+    17,
+    29,
+    43
+  ],
+  "test_rows_per_seed": 1031,
+  "files": {
+    "README.md": "54c1045387903b7328a1119d992ba6eb4e85c2924610f39e0d94b7e2572db9da",
+    "data/manifest.json": "f5c02f211be30ae1c6df2f2ac7af8b8d6f8d7f038b9a98e26cfe163d2d0e336d",
+    "data/observations.csv": "c851f91854519e8bc04f41bb42c890024fa3e90a9e63ffb495da470dbbe35ba6",
+    "data/pairs.csv": "2691ed781176005ff8f77324f00b36dae33c44ac4c0eb134202dbd014cf345d1",
+    "models/legacy_tf/s17/checkpoint.bin": "77722cda481e02945c30c35be6529e106894d0aabfde452d2c957d15cee676d4",
+    "models/legacy_tf/s17/record.json": "2a13567b292686c3df6034e44fcecdb9df5fdbe498bbca83a299c6485d995210",
+    "models/legacy_tf/s29/checkpoint.bin": "734848aee5c5d8690f31e7957a422cd4e19b885af3dfc73d0d076f463c96bcb3",
+    "models/legacy_tf/s29/record.json": "5b133ed688050ee9c26bcbf09a496f7d82bbba215a37c8823c1c83921a39dc4a",
+    "models/legacy_tf/s43/checkpoint.bin": "5d49e0ccbd8fdfe42652969b5eeb7ba20af7a2ed51465f278bf6da288b0f5969",
+    "models/legacy_tf/s43/record.json": "be83419fa3fb38600deaff91fa6ba5b422ec40869f5d112284f3a8f512005d66",
+    "models/pytorch/s17/checkpoint.bin": "911614ea20debe35acec7f628c6beaee13cc4d1d8283f917ad0dd3153dbb6f19",
+    "models/pytorch/s17/record.json": "a90ed7921a688b909630640ca4a55d303e34c7aa66237abcf1d2b7ac089c99a9",
+    "models/pytorch/s29/checkpoint.bin": "7f6974bc408ab64e566e89dbab686185e2a60a6d6ca55a1b4db035fbd949dcf9",
+    "models/pytorch/s29/record.json": "e6b87a8a1e93744cddbd8469218cf27b645c3d0658ac783327ad8ee9f7360ff3",
+    "models/pytorch/s43/checkpoint.bin": "3aac593f2ed438536761a01e1de49ec553708b99e46a998828611a2d6eec3d5c",
+    "models/pytorch/s43/record.json": "114e7a590f2ff2a80973c77bbb399a2f07e7d047127c80f5f4ae18077c38e3c6",
+    "plots/predictions.png": "8f9a1efb0e00ed5a756cdfae77cc646cbc962bc347c85267b3e01015a76275e4",
+    "plots/residuals.png": "d4054f5f123f074d9d84564ebcd8abd278c8f9ccc119418b4caf37cdd255b170",
+    "plots/rmse.png": "8f16ec3260a4c68759b88ef8c312b4c38ea3d3673134bc5bade45fd63ee797fd",
+    "provenance/config.json": "b0ad13f4f9abd7278709cae2c7cf7d931b714cc2594a82544b4c14be0073cd58",
+    "provenance/provenance.json": "495a809a0544c1b5927eddca23bcb95acd25d412bbb298a69cbb130e6049a00e",
+    "provenance/source.tar.gz": "a4cdc5ce67327c724a9eee1f4b624e5fd35e32dd9802db9e48eb83963d97900a",
+    "provenance/verification.json": "799220b5b8a2ce3717c985bb2ea4d143ae82a57efd00766856ce08ce187f2580",
+    "tables/metrics.csv": "eeaf3e4943ee2b9661ab8f7228659ba38283ecfd75c42a49427d1b2de645cde3",
+    "tables/predictions.csv": "91e3a8666e198a6321931f60b690408af0dc6b0a820f5e60dd28c95ab29348c2",
+    "tables/test-summary.csv": "c63496288054d4a0437893d446493b2f8e5ef3aee7e68a21137c77543acb753b"
+  }
+}

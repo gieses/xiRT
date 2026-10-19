@@ -1,0 +1,59 @@
+{
+  "config": {
+    "epochs": 30,
+    "batch_size": 64,
+    "learning_rate": 0.003,
+    "weight_decay": 0.01,
+    "patience": 8,
+    "rank": 4,
+    "alpha": 4.0,
+    "adapter_learning_rate_ratio": 0.1,
+    "threads": 2
+  },
+  "datasets": [
+    "full_ecoli_linear_modified",
+    "full_ecoli_modified",
+    "full_fa_cross_modified",
+    "full_fa_linear_modified",
+    "full_plink_modified"
+  ],
+  "seeds": [
+    17,
+    29,
+    43
+  ],
+  "strategies": [
+    "recurrent_full",
+    "recurrent_frozen",
+    "recurrent_lokr",
+    "recurrent_lora"
+  ],
+  "source_files": {
+    "xirt/adapters.py": "a6f39ce87e13b6c7f49e5ca42f13a00b0392fbf133fdeddc29e93d2e76fa3ffd",
+    "xirt/config.py": "4cb0881e2e36dcacd1eaf5c661710f152109eaa2c46c22413a78bc84dffe279d",
+    "xirt/training.py": "e92976104cd3f2f555a4d2c0deaff6245aa9d13d999ce8ecb64482c57682710e",
+    "xirt/tracking.py": "07caaca93c90dccfab1b889ff2ecb32328199c46769700488b7401ac11fc1d37",
+    "xirt/xirtnet.py": "e4d1e4cd9f1642945836b3294ad49da0b677b6c828858ab756ba8b8e7aa2ee20",
+    "xirt/data_pipelines/benchmarks/common.py": "84b666a944f066114ed4e62488f55bb8cf73b027ff3aea95f103369a79f5bef9",
+    "xirt/data_pipelines/benchmarks/dataset.py": "40fbc84dc68469f9b0b2afbdc188353d4be6adf7d47e27afc8a14bf3ee6035a9",
+    "xirt/data_pipelines/benchmarks/fine_tune_torch/pipeline.py": "dfde52437eeb28609455722b17c2cd7642a8565595b4cacc169c2009c06b37b7"
+  },
+  "environment": {
+    "python": "3.12.3",
+    "torch_runtime": "2.14.1+cu130",
+    "packages": {
+      "torch": "2.14.1",
+      "numpy": "2.5.4",
+      "pandas": "2.3.3",
+      "pydantic": "2.14.1",
+      "scikit-learn": "1.9.1"
+    }
+  },
+  "cohort_archives": {
+    "full_ecoli_linear_modified": "b63641642ed4abc8b090a069fffa791203a6f9243775067108c37750401fe045",
+    "full_ecoli_modified": "743ba68d2dd931a9a7496781211b05960d875d71a5d62ba865d55b081e47ba19",
+    "full_fa_cross_modified": "ea9d9c9021b343e8b928028e0b5ccc30ca0df45eabf571cc8e58d8a405ea7499",
+    "full_fa_linear_modified": "b61fcce73fc11ac6ec0e7ce634cbf8ad79ef89c7a89bf15252851d70333a89ed",
+    "full_plink_modified": "d74703e56bfa3cf358654938141636d4bd8d367c6d896db6b657483029f0703c"
+  }
+}

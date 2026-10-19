@@ -1,0 +1,32 @@
+{
+  "status": "ok",
+  "dataset": "full_fa_linear_modified",
+  "seed": 17,
+  "strategy": "recurrent_lokr",
+  "protocol_sha256": "2eae9f1a7aefab5c8b66459b801abb88828ac75a18517a0617db110d8c0305e6",
+  "base_checkpoint_sha256": "bbd15ce394eb006bd2f8311bcb54e65deb6ec025db12462b845c672e874ff1a8",
+  "trainable_parameters": 441,
+  "total_parameters": 1945,
+  "epochs_executed": 13,
+  "best_epoch": 5,
+  "training_seconds": 6.14294632000383,
+  "test_inference_seconds": 0.011505686037708074,
+  "quality": {
+    "train": {
+      "rmse_seconds": 500.18290158823527,
+      "mae_seconds": 376.97989598677015,
+      "r2": 0.8418194401406769
+    },
+    "validation": {
+      "rmse_seconds": 543.6676293375133,
+      "mae_seconds": 426.4265625993829,
+      "r2": 0.7535271761588993
+    },
+    "test": {
+      "rmse_seconds": 650.3009183881768,
+      "mae_seconds": 493.76534037225616,
+      "r2": 0.7372819364185859
+    }
+  },
+  "frozen_parameters_unchanged": true
+}

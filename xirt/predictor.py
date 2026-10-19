@@ -1,21 +1,19 @@
 """Module to organize predictions from CLMS data."""
-import sys
+
 import logging
+import sys
 
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import KFold
 from sklearn.metrics import accuracy_score
+from sklearn.model_selection import KFold
 from sklearn.preprocessing import LabelEncoder
 
-from xirt import processing as xp, const
+from xirt import const, xirtnet
+from xirt import processing as xp
 from xirt import sequences as xs
-from xirt import xirtnet
-import multiprocessing as mp
-from math import ceil
-from functools import partial
 
-logger = logging.getLogger('xirt').getChild(__name__)
+logger = logging.getLogger("xirt").getChild(__name__)
 
 
 class ModelData:
@@ -60,7 +58,8 @@ class ModelData:
             logger.info("Removed 0 peptides (str).")
         else:
             str_mask = (self.psms["Fasta1"].str.contains(str_filter)) & (
-                self.psms["Fasta2"].str.contains(str_filter))
+                self.psms["Fasta2"].str.contains(str_filter)
+            )
             fdr_mask = (self.psms["fdr"] <= fdr_cutoff) & (self.psms["isTT"]) & str_mask
             logger.info(f"Removed {np.sum(~str_mask)} peptides (str filter).")
 
@@ -85,11 +84,11 @@ class ModelData:
             None
         """
         logger.info(f"Shuffling data (random_state: {random_state})")
-        psms_train_idx = self.psms[
-            (self.psms["fdr_mask"]) & (~self.psms["Duplicate"].astype(bool))
-        ].sample(
-            frac=sample_frac, random_state=random_state
-        ).index
+        psms_train_idx = (
+            self.psms[(self.psms["fdr_mask"]) & (~self.psms["Duplicate"].astype(bool))]
+            .sample(frac=sample_frac, random_state=random_state)
+            .index
+        )
         self.train_idx = psms_train_idx
         self.predict_idx = self.psms.index.difference(psms_train_idx)
         self.shuffled = True
@@ -119,7 +118,7 @@ class ModelData:
             raise ValueError(msg)
 
         if test_size < 0.1:
-            msg = 'Test split value must be > 0.1. Please set test_size to min 0.1 (10%).'
+            msg = "Test split value must be > 0.1. Please set test_size to min 0.1 (10%)."
             logger.critical(msg)
             raise ValueError(msg)
 
@@ -140,8 +139,9 @@ class ModelData:
                 train_df_idx,
                 [
                     int((1 - test_size * 2) * len(train_df_idx)),
-                    int((1 - test_size) * len(train_df_idx))
-                ])
+                    int((1 - test_size) * len(train_df_idx)),
+                ],
+            )
             yield train_idx, val_idx, pre_idx
 
         else:
@@ -150,12 +150,7 @@ class ModelData:
             train_features1 = self.features1.loc[self.train_idx]
             kf = KFold(n_splits=n_splits, shuffle=False)
             kf.get_n_splits(train_features1)
-            cv_slice_idxs = np.array(
-                [
-                    i[1] for i in kf.split(train_features1)
-                ],
-                dtype=object
-            )
+            cv_slice_idxs = np.array([i[1] for i in kf.split(train_features1)], dtype=object)
 
             for i in cv_folds_ar:
                 # this will get all the slices where "t" indicates the training
@@ -167,16 +162,11 @@ class ModelData:
                 # get train folds -> get locations -> get index
                 train_init_idx = train_df_idx[split_train.tolist()]
                 train_idx, val_idx = np.split(
-                    train_init_idx,
-                    [
-                        int((1 - test_size) * len(train_init_idx))
-                    ]
+                    train_init_idx, [int((1 - test_size) * len(train_init_idx))]
                 )
 
                 # take a testing fold
-                pre_idx = train_df_idx[
-                    list(cv_slice_idxs[~train_msk][0])
-                ]
+                pre_idx = train_df_idx[list(cv_slice_idxs[~train_msk][0])]
 
                 # change the pattern for next iteration
                 cv_pattern = cv_pattern[1:] + [cv_pattern[0]]
@@ -218,10 +208,12 @@ class ModelData:
         else:
             # if lienar peptides are used features 2 are empty
             if self.features2.empty:
-                xfeatures = self.features1.filter(regex="rnn").loc[idx]
+                xfeatures = self.features1.filter(regex="rnn|esm").loc[idx]
             else:
-                xfeatures = (self.features1.filter(regex="rnn").loc[idx],
-                             self.features2.filter(regex="rnn").loc[idx])
+                xfeatures = (
+                    self.features1.filter(regex="rnn|esm").loc[idx],
+                    self.features2.filter(regex="rnn|esm").loc[idx],
+                )
         return xfeatures
 
     def get_classes(self, idx, frac_cols, cont_cols):
@@ -313,29 +305,29 @@ class ModelData:
 
             # only init once
             if f"{task_i}-prediction{suf}" not in self.prediction_df.columns:
-                self.prediction_df[f"{task_i}-prediction{suf}"] = -1000000
+                self.prediction_df[f"{task_i}-prediction{suf}"] = np.nan
 
                 # softmax also gets probabilities
                 if pred_type == "softmax":
-                    self.prediction_df[f"{task_i}-probability{suf}"] = -1000000
+                    self.prediction_df[f"{task_i}-probability{suf}"] = np.nan
 
             if pred_type in ["linear", "relu"]:
                 # easiest, just ravel to 1d ar
-                self.prediction_df.loc[
-                    store_idx,
-                    f"{task_i}-prediction{suf}"
-                ] = np.ravel(pred_ar)
+                self.prediction_df.loc[store_idx, f"{task_i}-prediction{suf}"] = np.ravel(pred_ar)
 
             elif pred_type == "softmax":
                 # classification, take maximum probability as class value
-                self.prediction_df.loc[store_idx, f"{task_i}-prediction{suf}"] = \
-                    np.argmax(pred_ar, axis=1)
-                self.prediction_df.loc[store_idx, f"{task_i}-probability{suf}"] = \
-                    np.max(pred_ar, axis=1)
+                self.prediction_df.loc[store_idx, f"{task_i}-prediction{suf}"] = np.argmax(
+                    pred_ar, axis=1
+                )
+                self.prediction_df.loc[store_idx, f"{task_i}-probability{suf}"] = np.max(
+                    pred_ar, axis=1
+                )
 
             elif pred_type == "sigmoid":
-                self.prediction_df.loc[store_idx, f"{task_i}-prediction{suf}"] = \
-                    sigmoid_to_class(pred_ar)
+                self.prediction_df.loc[store_idx, f"{task_i}-prediction{suf}"] = sigmoid_to_class(
+                    pred_ar
+                )
 
             else:
                 raise ValueError(f"{pred_type} not supported, only linear/softmax/sigmoid")
@@ -362,8 +354,9 @@ def compute_accuracy(predictions, expected, tasks, params):
     # compute accuracy
     for task_i, pred_ar in zip(tasks, predictions):
         if "ordinal" in params[task_i + "-column"]:
-            accuracy_tmp.append(accuracy_score(sigmoid_to_class(pred_ar),
-                                               expected[task_i + "_0based"]))
+            accuracy_tmp.append(
+                accuracy_score(sigmoid_to_class(pred_ar), expected[task_i + "_0based"])
+            )
     return np.round(accuracy_tmp, 3)
 
 
@@ -392,8 +385,16 @@ def sigmoid_to_class(predictions, t=0.5):
     return pred_hats
 
 
-def preprocess(matches_df, sequence_type="crosslink", max_length=-1, cl_residue=True,
-               fraction_cols=[], column_names=const.default_column_names):
+def preprocess(
+    matches_df,
+    sequence_type="crosslink",
+    max_length=-1,
+    cl_residue=True,
+    fraction_cols=[],
+    column_names=const.default_column_names,
+    le=None,
+    fraction_levels=None,
+):
     """Prepare peptide identifications to be used with xiRT.
 
     High-level wrapper performing multiple steps. In processing order this function:
@@ -416,32 +417,25 @@ def preprocess(matches_df, sequence_type="crosslink", max_length=-1, cl_residue=
     """
     logger.info("Preprocessing peptides.")
     logger.info(f"Input peptides: {len(matches_df)}")
+    if matches_df.empty:
+        raise ValueError("Input peptide table is empty.")
 
     # sort to keep only highest scoring peptide from duplicated entries
-    matches_df = matches_df.sort_values(by=column_names['score'], ascending=False)
+    matches_df = matches_df.sort_values(by=column_names["score"], ascending=False)
 
     if len(matches_df["PSMID"].unique()) != matches_df.shape[0]:
         logger.warning("PSMID column was not unique! Redundant PSMIDs were removed")
         matches_df = matches_df.drop_duplicates("PSMID")
 
-    logger.info("Reordering peptide sequences. (mode: {})".format(sequence_type))
+    logger.info(f"Reordering peptide sequences. (mode: {sequence_type})")
 
     # generate columns to handle based on input data type
     if sequence_type in ["crosslink", "pseudolinear"]:
-        mp_slice_size = ceil(len(matches_df) / (mp.cpu_count()-1))
-        mp_df_slices = [
-            matches_df[i * mp_slice_size:(i + 1) * mp_slice_size]
-            for i in range(mp.cpu_count()-1)
-        ]
-        with mp.Pool() as pool:
-            # change peptide order
-            reorder_job = partial(xs.reorder_sequences, column_names=column_names)
-            mp_results = pool.map(reorder_job, mp_df_slices)
-            matches_df = pd.concat(mp_results).copy()
-            seq_in = [column_names['peptide1_sequence'], column_names['peptide2_sequence']]
+        matches_df = xs.reorder_sequences(matches_df, column_names=column_names).copy()
+        seq_in = [column_names["peptide1_sequence"], column_names["peptide2_sequence"]]
     elif sequence_type == "linear":
-        matches_df[column_names['peptide2_sequence']] = ""
-        seq_in = [column_names['peptide1_sequence']]
+        matches_df[column_names["peptide2_sequence"]] = ""
+        seq_in = [column_names["peptide1_sequence"]]
     else:
         msg = "sequence type not supported. Must be one of (crosslink, pseudolinear, linear)"
         logger.critical(msg)
@@ -454,9 +448,10 @@ def preprocess(matches_df, sequence_type="crosslink", max_length=-1, cl_residue=
     matches_df = xp.prepare_seqs_mp(matches_df, seq_cols=seq_in)
 
     # concat peptide sequences
-    matches_df["PepSeq1PepSeq2_str"] = \
-        matches_df[column_names['peptide1_sequence']] +\
-        matches_df[column_names['peptide2_sequence']]
+    matches_df["PepSeq1PepSeq2_str"] = (
+        matches_df[column_names["peptide1_sequence"]]
+        + matches_df[column_names["peptide2_sequence"]]
+    )
 
     # mark all duplicates
     matches_df["Duplicate"] = matches_df.duplicated(["PepSeq1PepSeq2_str"], keep="first")
@@ -472,7 +467,8 @@ def preprocess(matches_df, sequence_type="crosslink", max_length=-1, cl_residue=
     if sequence_type == "pseudolinear":
         matches_df["pseudo_spacer"] = [["X"]] * len(matches_df)
         matches_df["Seqar_Pseudo"] = matches_df[[seq_proc[0], "pseudo_spacer", seq_proc[1]]].apply(
-            np.concatenate, axis=1)
+            lambda row: np.concatenate(row.to_list()), axis=1
+        )
         seq_proc = ["Seqar_Pseudo"]
 
     # length filter
@@ -483,14 +479,17 @@ def preprocess(matches_df, sequence_type="crosslink", max_length=-1, cl_residue=
         matches_df = matches_df[valid_length]
 
     logger.info(f"Applying length filter: {len(matches_df)} peptides left")
-    features_rnn_seq1, features_rnn_seq2, le = \
-        xp.featurize_sequences(matches_df, seq_cols=seq_proc, max_length=max_length)
+    if matches_df.empty:
+        raise ValueError("No peptides remain after length filtering.")
+    features_rnn_seq1, features_rnn_seq2, le = xp.featurize_sequences(
+        matches_df, seq_cols=seq_proc, max_length=max_length, le=le
+    )
 
     # add the two fraction encoding columns
     # psms_df[col + "_1hot"] and psms_df[col + "_ordinal"]
     if len(fraction_cols) > 0:
         logger.info("Encoding fractions")
-        xp.fraction_encoding(matches_df, rt_methods=fraction_cols)
+        xp.fraction_encoding(matches_df, rt_methods=fraction_cols, levels=fraction_levels)
 
     # keep all data together in a data class
     return ModelData(matches_df, features_rnn_seq1, features_rnn_seq2, le=le)

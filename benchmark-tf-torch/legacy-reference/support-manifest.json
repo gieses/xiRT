@@ -1,0 +1,32 @@
+{
+  "archive_sha256": "3ce2d8437a3a4a0ef7d3ba52079f9ad12b5fc99e06943c8f1544c98a01632edb",
+  "files": {
+    "documentation/Makefile": "e33bf74d59130029ba24168a813112dd923d7044d780ce942db6645d93f56acf",
+    "documentation/make.bat": "ff4d4325683c25fc398f3dfb3546edf2a4c3b7c01122b534d690e5d9f8510348",
+    "documentation/imgs/xiRT_logo.png": "49ad8eae40e486aee8164ba2ca7c269ff18171380569639cd37358dcf1757c6b",
+    "documentation/imgs/xiRT.PNG": "01d23bfc3b08893f5abd1d629da78fac076d5c57a6e8601efd72149178a70751",
+    "documentation/imgs/coverage.svg": "ca4e23a835c06b11f23f5c1dc5b260b216ce5332bd427d836c4022285b0395ef",
+    "documentation/source/xirt.rst": "4a352962a66b8db01cd11ab7de33eee862ebf65438fbfafa2b722d9c637a5182",
+    "documentation/source/index.rst": "1cd40952294af6760ac354b48054d6a777d0e069028ab58ede2155754666c31f",
+    "documentation/source/conf.py": "e2acdb06a88f9874a24ce138ffe94ecc78ca075bf679880ef8977c9c6df3a65f",
+    "documentation/source/faq.rst": "84399bb367f5aeb607d03a78e42db371cfa5344e87ab49fe31f17f918aea3dfb",
+    "documentation/source/xiRT_logo.png": "49ad8eae40e486aee8164ba2ca7c269ff18171380569639cd37358dcf1757c6b",
+    "documentation/source/readme.rst": "3377e6274160f962ca8df03c9b1e4d2e13bd97656424c1788a70af95ac88faab",
+    "documentation/source/results.rst": "2acbb243a52960c9191258d5b560a047e59eec11b6f16c88ec6cfcf7d0ff7799",
+    "documentation/source/development.rst": "4734a254dbc3c90d91f5eedaa2ff3ed69d85777938b1995f38585f0c591a7ba4",
+    "documentation/source/usage.rst": "22ecdb69b364070e93d1feff2ce8f062736768c3e881e7c8c26bd5e6dc94aa27",
+    "documentation/source/installation.rst": "d94a1c519b9652ddac83c4c0c0da31faba215fa2e30ddf452d0b90d51d18754b",
+    "documentation/source/parameters.rst": "4ada08a7600f3c454fdb123694fd1caabd6cf6138dbc85acf5ad083c9d3e472b",
+    "documentation/source/modules.rst": "a05ff0cf150cfa39a54a4dc160e0e5f550d2b25650cd782d5dad4f4695a6d26c",
+    "documentation/imgs/qc_plots/cv_epochs_loss.png": "ffda3a88ba1358736f3107f65fef00468372a113c2783fe2623c675f234dd1e9",
+    "documentation/imgs/qc_plots/qc_cv01_obs_pred.png": "e9da5237c6a4d16462fcc92418e6b22a36063b35fc685c87b76d400514d4b52a",
+    "documentation/imgs/qc_plots/cv_summary_strip_loss.png": "9d79b82eba21026746d5f2385ffb43d4e1b3afd8cd4f0cf83e85566899d23dbc",
+    "benchmarks/requirements-legacy.txt": "00d6810f511eccf57595da93b5dc8e87dc2060bfdc5de3a75f2470ee2df83bc5",
+    "benchmarks/requirements-experiments.txt": "7b4668143f044e82207831932bb181b365d325e9863a269a0218259fe8f686e2",
+    "benchmarks/requirements.txt": "a7770f2770428decba09f384a8bfedcbffd345230b22e3b9d84e181ef218baef",
+    "benchmarks/requirements-snakemake.txt": "ad52c5f5776b330199b6183876aec50cccb12b8b5db4821ddf5b7cb80f294c49",
+    "benchmarks/README.md": "389b92aee5bc659f67f457605f951578e1f7e267b1925195829ab327af3a7a79",
+    "benchmarks/workflow/Snakefile": "2ac2c88bbf8f5d343f6282abc7e778f8d0fce182457e780e1e9ba760b95aa0d1",
+    "xirt/data_pipelines/benchmarks/tf_torch/replay.py": "d1f1d4fdefa20be0faac8806cfec883cb5e69b1f68eac72ed212765361177fed"
+  }
+}

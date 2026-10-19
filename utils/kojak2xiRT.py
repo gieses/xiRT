@@ -51,4 +51,3 @@ frac_annot = lambda name, prefix: int(re.search(r"{}(\d+)".format(prefix), name)
 df_kojak["scx"] = df_kojak["Run"].apply(frac_annot, args=("SCX",))
 df_kojak["hsax"] = df_kojak["Run"].apply(frac_annot, args=("hSAX",))
 df_kojak.to_csv(r"all_kojak.csv", sep=",")
-

@@ -1,15 +1,19 @@
-FROM python:3.7
+FROM python:3.13-slim
+COPY --from=ghcr.io/astral-sh/uv:0.13.0 /uv /usr/local/bin/uv
 
-RUN mkdir -p /app
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    MPLBACKEND=Agg \
+    PATH="/app/.venv/bin:$PATH"
 WORKDIR /app
 
-COPY requirements.txt .
-RUN pip install -r requirements.txt
-
-COPY setup.py .
-COPY setup.cfg .
+COPY pyproject.toml uv.lock setup.py README.md CHANGELOG.md LICENCE ./
 COPY xirt/ xirt/
+RUN uv sync --locked --no-dev --no-editable --extra cpu --no-cache \
+    && useradd --create-home xirt \
+    && mkdir /data \
+    && chown xirt:xirt /data
 
-RUN pip install .
-
-ENTRYPOINT ["python", "-m", "xirt"]
+USER xirt
+WORKDIR /data
+ENTRYPOINT ["xirt"]

@@ -4,6 +4,14 @@ import pandas as pd
 from xirt import processing as xp
 
 
+def test_featurize_respects_explicit_padding_width():
+    psms = pd.DataFrame({"Seqar_Peptide1": [["H-", "P", "E", "-OH"]]})
+    features, _, encoder = xp.featurize_sequences(
+        psms, seq_cols=["Seqar_Peptide1"], max_length=12)
+    assert features.shape == (1, 12)
+    assert np.equal(features.iloc[0, :8], 0).all()
+
+
 def test_prepare_seqs_standard():
     # test high level processing function for peptide sequences, from input to features
     psms_df = pd.DataFrame()

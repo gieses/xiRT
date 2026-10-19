@@ -1,0 +1,43 @@
+name: Optional GPU and ESMC integration
+
+on:
+  workflow_dispatch:
+    inputs:
+      esmc:
+        description: Also exercise ESMC using pre-cached, licensed local weights
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  gpu:
+    if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    runs-on: [self-hosted, linux, x64, gpu]
+    timeout-minutes: 30
+    environment: gpu-integration
+    env:
+      MPLBACKEND: Agg
+      HF_HUB_OFFLINE: "1"
+      TRANSFORMERS_OFFLINE: "1"
+      HF_HUB_DISABLE_TELEMETRY: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+        with:
+          version: "0.13.0"
+          python-version: "3.12"
+          enable-cache: true
+      - name: Isolated locked dependencies (runner supplies a CUDA 13-compatible driver)
+        run: uv sync --locked --extra cuda --group dev --extra tracking
+      - name: Check CUDA and exercise GPU integration
+        run: uv run --no-sync python .github/scripts/integration_smoke.py
+      - name: Install optional ESM dependencies
+        if: inputs.esmc
+        run: uv sync --locked --extra cuda --group dev --extra tracking --extra esm --extra experiments
+      - name: Exercise local ESMC weights without uploading data or credentials
+        if: inputs.esmc
+        run: uv run --no-sync python .github/scripts/integration_smoke.py --esm
