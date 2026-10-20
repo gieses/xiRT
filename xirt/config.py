@@ -48,6 +48,7 @@ class NetworkConfig(BaseModel):
     encoder: dict[str, Any] = {"route": "recurrent"}
     adapter: dict[str, Any] | None = None
     fine_tuning: FineTuningConfig | None = None
+    numeric_features: list[str] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def validate_architecture(self) -> "NetworkConfig":
@@ -55,6 +56,12 @@ class NetworkConfig(BaseModel):
         tasks = self.predictions["fractions"] + self.predictions["continues"]
         if not tasks or len(tasks) != len(set(tasks)):
             raise ValueError("Prediction tasks must be nonempty and unique.")
+        if len(self.numeric_features) != len(set(self.numeric_features)) or any(
+            not name.strip() for name in self.numeric_features
+        ):
+            raise ValueError("Numeric feature names must be nonempty and unique.")
+        if self.numeric_features and self.siamese.get("single_predictions"):
+            raise ValueError("Single-peptide attribution is undefined with precursor features.")
         if self.encoder.get("route") not in {"recurrent", "esm-c"}:
             raise ValueError("encoder.route must be recurrent or esm-c.")
         if self.encoder["route"] == "esm-c" and self.encoder.get("embedding_dim", 0) < 1:

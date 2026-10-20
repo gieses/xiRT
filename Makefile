@@ -17,7 +17,7 @@ VERSION = $(shell $(RUN) python -c 'import tomllib; print(tomllib.load(open("pyp
 TAG = v$(VERSION)
 
 .PHONY: help sync build docs serve-docs test lint format check examples pre-commit install-hooks \
-	notebook notebook-edit benchmark-plan benchmark-smoke benchmark changelog release-check release publish
+	notebook notebook-edit notebook-faims notebook-analysis benchmark-faims benchmark-plan benchmark-smoke benchmark changelog release-check release publish
 
 help: ## Show available commands (default)
 	@printf '\nxiRT - developer commands\n\n'
@@ -48,7 +48,7 @@ lint: ## Check Python, types, notebook dataflow and Bash syntax
 	$(RUN) ruff check --isolated --select E9,F63,F7,F82 xirt tests
 	$(RUN) ruff format --check --quiet .
 	$(RUN) mypy
-	$(RUN) marimo check --strict xirt/data_pipelines/benchmarks/tf_torch/analyze_results.py examples/train_predict.py examples/fine_tune.py
+	$(RUN) marimo check --strict xirt/data_pipelines/benchmarks/tf_torch/analyze_results.py examples/train_predict.py examples/fine_tune.py examples/faims.py examples/analyze_predictions.py
 	bash -n run.sh
 
 format: ## Fix modern-code lint issues and apply formatting
@@ -57,9 +57,11 @@ format: ## Fix modern-code lint issues and apply formatting
 
 check: lint test docs ## Run local checks without publishing or benchmark runs
 
-examples: ## Run the two small CPU training and fine-tuning notebooks
+examples: ## Run CPU RT/FAIMS training, fine-tuning and prediction analysis
 	MPLBACKEND=Agg $(RUN) python examples/train_predict.py
 	MPLBACKEND=Agg $(RUN) python examples/fine_tune.py
+	MPLBACKEND=Agg $(RUN) python examples/faims.py
+	MPLBACKEND=Agg $(RUN) python examples/analyze_predictions.py
 
 pre-commit: ## Run configured hooks on all tracked files
 	$(RUN) pre-commit run --all-files
@@ -72,6 +74,15 @@ notebook: ## Open the read-only benchmark dashboard at localhost:2718
 
 notebook-edit: ## Open the benchmark notebook editor
 	$(RUN) marimo edit xirt/data_pipelines/benchmarks/tf_torch/analyze_results.py --host "$(HOST)" --port "$(NOTEBOOK_PORT)" --headless
+
+notebook-faims: ## Train and inspect the bundled charge-aware FAIMS example
+	$(RUN) marimo edit examples/faims.py --host "$(HOST)" --port "$(NOTEBOOK_PORT)" --headless
+
+notebook-analysis: ## Explain RT and FAIMS predictions at residue level
+	$(RUN) marimo edit examples/analyze_predictions.py --host "$(HOST)" --port "$(NOTEBOOK_PORT)" --headless
+
+benchmark-faims: ## Run/resume the frozen FAIMS experiment with verified local inputs
+	$(RUN) python -m xirt.data_pipelines.benchmarks.faims.run
 
 benchmark-plan: ## Validate archived inputs and list native fine-tuning jobs
 	bash run.sh plan

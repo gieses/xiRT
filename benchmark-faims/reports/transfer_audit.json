@@ -1,0 +1,14 @@
+[
+  {
+    "source": "pooled_4pm_8pm",
+    "target": "26s",
+    "excluded_shared_pair_precursors": 0,
+    "evaluated_precursors": 2827
+  },
+  {
+    "source": "pooled_4pm_8pm",
+    "target": "293t",
+    "excluded_shared_pair_precursors": 0,
+    "evaluated_precursors": 465
+  }
+]

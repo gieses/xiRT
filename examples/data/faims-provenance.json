@@ -1,0 +1,25 @@
+{
+  "schema": "xirt-faims-tutorial-data-v1",
+  "upstream_repository": "https://github.com/Rappsilber-Laboratory/xiFAIMS",
+  "upstream_revision": "b85482ffc246b2dc669c4592f752568fd9b1baed",
+  "license": "Apache-2.0",
+  "datasets": {
+    "4pm": {
+      "file": "4PM_DSS_LS_nonunique1pCSM.csv",
+      "sha256": "0222301423a3906b7a2788620eecb1e7bcb61bdb40c3c91183517d11f7971dcc"
+    },
+    "8pm": {
+      "file": "8PM_DSS_Liu_nonunique1pCSM.csv",
+      "sha256": "5539af6102f71ddeb532b53fbb994460d5ceead41bb21eb9b4116f9431ac45f8"
+    }
+  },
+  "selection": "256 sorted unmodified pair groups sampled without replacement with numpy default_rng(42); all precursor variants retained",
+  "pair_groups": 256,
+  "precursors": 915,
+  "target": "CSM-weighted mean observed CV per source, modified pair, sites and charge",
+  "units": "V",
+  "maximum_fdr": 0.01,
+  "target_target_only": true,
+  "overlaps_full_benchmark": true,
+  "sha256": "9954c49478e064df9b5339f2eb49e9502a011bc2060aeea91af12b12d1caade9"
+}

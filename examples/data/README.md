@@ -27,3 +27,18 @@ example, not an external generalization benchmark.
 |---|---|
 | Source CSV | `77ede04d50b75a511d1ef84710a9ee709b612aba335b06c18a48c3e591f0307b` |
 | Tutorial CSV | `34711b7b018edd9f69b913444017fbe2089f5267fef30051d908d984a1ba990c` |
+
+## FAIMS example
+
+`faims.csv` contains 915 precursors in 256 unmodified peptide-pair groups from
+the original xiFAIMS 4PM and 8PM datasets (Apache-2.0). The pinned source
+revision, input checksums, sampling rule and derived CSV checksum are recorded
+in `faims-provenance.json`. The combined source table is not used.
+
+Only explicit target-target CSMs at FDR <= 0.01 are retained. Observed CVs are
+averaged per source, modified peptide pair, sites and charge. The result is
+mean observed CV in volts, not CCS or an intensity-calibrated optimum.
+All precursor variants for each sampled unmodified pair are kept; seed-42
+grouped splits keep charge/PTM/site variants together. Proteins, runs and
+individual peptides are not held out. The subset overlaps the full FAIMS
+benchmark and must not be described as independent test evidence.

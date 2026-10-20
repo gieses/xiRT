@@ -63,6 +63,10 @@ class RetentionModel(nn.Module):
         ...                 torch.ones(2, 30, dtype=torch.long))  # doctest: +SKIP
     """
 
+    numeric_mean: Tensor
+    numeric_scale: Tensor
+    numeric_fitted: Tensor
+
     def __init__(
         self, params: dict[str, Any], input_dim: int, alphabet: int, siamese: bool
     ) -> None:
@@ -102,6 +106,13 @@ class RetentionModel(nn.Module):
             width = params["encoder"]["embedding_dim"]
         if siamese and params["siamese"]["merge_type"] == "concatenate":
             width *= 2
+        self.numeric_features = list(params.get("numeric_features", []))
+        if self.numeric_features:
+            count = len(self.numeric_features)
+            width += count
+            self.register_buffer("numeric_mean", torch.zeros(count))
+            self.register_buffer("numeric_scale", torch.ones(count))
+            self.register_buffer("numeric_fitted", torch.tensor(False))
         self.heads = nn.ModuleDict()
         self.outputs = nn.ModuleDict()
         for task in self.tasks:
@@ -207,8 +218,19 @@ class RetentionModel(nn.Module):
         self.activity.append(features)
         return features * (lengths > 0).unsqueeze(1)
 
-    def forward(self, first: Tensor, second: Tensor | None = None) -> dict[str, Tensor]:
+    def forward(
+        self, first: Tensor, second: Tensor | None = None, *, numeric: Tensor | None = None
+    ) -> dict[str, Tensor]:
         """Return task logits; probabilistic activation is applied only for prediction."""
+        if self.numeric_features:
+            if numeric is None or numeric.shape != (len(first), len(self.numeric_features)):
+                raise ValueError("Configured numeric features are required for every sample.")
+            if not bool(self.numeric_fitted):
+                raise RuntimeError("Numeric normalization is not fitted; train or load a model.")
+            if not torch.isfinite(numeric).all():
+                raise ValueError("Numeric features must be finite.")
+        elif numeric is not None:
+            raise ValueError("This model was not configured with numeric features.")
         self.activity = []
         features = self.encode(first)
         if self.siamese:
@@ -228,41 +250,100 @@ class RetentionModel(nn.Module):
                 features = torch.maximum(features, other)
         elif second is not None:
             raise ValueError("Single-peptide networks accept only one input.")
+        if numeric is not None:
+            normalized = (numeric - self.numeric_mean) / self.numeric_scale
+            features = torch.cat((features, normalized), dim=1)
         outputs = {t: self.outputs[t](self.heads[t](features)) for t in self.tasks}
         for t in self.tasks:
             if self.params["output"][f"{t}-activation"] == "relu":
                 outputs[t] = outputs[t].relu()
         return outputs
 
+    def _forward_inputs(self, inputs: tuple[Tensor, ...]) -> dict[str, Tensor]:
+        branches = 2 if self.siamese else 1
+        return self(
+            inputs[0],
+            inputs[1] if self.siamese else None,
+            numeric=inputs[branches] if self.numeric_features else None,
+        )
+
+    def _fit_numeric_scaling(self, inputs: tuple[Tensor, ...]) -> None:
+        if not self.numeric_features or bool(self.numeric_fitted):
+            return
+        values = inputs[-1].to(self.device)
+        self.numeric_mean.copy_(values.mean(0))
+        scale = values.std(0, unbiased=False)
+        self.numeric_scale.copy_(torch.where(scale > 0, scale, torch.ones_like(scale)))
+        if not (
+            torch.isfinite(self.numeric_mean).all() and torch.isfinite(self.numeric_scale).all()
+        ):
+            raise FloatingPointError("Nonfinite numeric-feature normalization.")
+        self.numeric_fitted.fill_(True)
+        self.params["_numeric_scaling"] = {
+            "columns": self.numeric_features,
+            "mean": self.numeric_mean.cpu().tolist(),
+            "scale": self.numeric_scale.cpu().tolist(),
+            "training_rows": len(values),
+        }
+
     def _inputs(self, x: Any) -> tuple[Tensor, ...]:
         """Validate and convert tabular features without losing sample order."""
-        is_branches = isinstance(x, tuple) or (self.siamese and isinstance(x, list))
+        is_branches = isinstance(x, tuple) or (
+            (self.siamese or self.numeric_features) and isinstance(x, list)
+        )
         values = list(x) if is_branches else [x]
-        if len(values) != (2 if self.siamese else 1):
-            raise ValueError("Input count does not match the configured peptide branches.")
+        branches = 2 if self.siamese else 1
+        if len(values) != branches + bool(self.numeric_features):
+            raise ValueError(
+                "Input count does not match the peptide branches and numeric features."
+            )
         result = []
-        for value in values:
+        for index, value in enumerate(values):
+            is_numeric = index == branches
+            if (
+                is_numeric
+                and isinstance(value, pd.DataFrame)
+                and value.columns.tolist() != self.numeric_features
+            ):
+                raise ValueError("Numeric feature columns must match the configured order.")
             array = value.to_numpy() if isinstance(value, pd.DataFrame) else np.asarray(value)
             width = (
-                self.input_dim
-                if self.route == "recurrent"
-                else self.params["encoder"]["embedding_dim"]
-            )
-            if array.ndim != 2 or array.shape[1] != width or not np.isfinite(array).all():
-                raise ValueError(f"Expected finite inputs of shape (samples, {width}).")
-            if self.route == "recurrent" and (
-                (array < 0).any()
-                or (array >= self.alphabet).any()
-                or not np.equal(array, np.floor(array)).all()
-            ):
-                raise ValueError("Sequence tokens must be integer indices within the vocabulary.")
-            result.append(
-                torch.as_tensor(
-                    array, dtype=torch.long if self.route == "recurrent" else torch.float32
+                len(self.numeric_features)
+                if is_numeric
+                else (
+                    self.input_dim
+                    if self.route == "recurrent"
+                    else self.params["encoder"]["embedding_dim"]
                 )
             )
+            if (
+                array.ndim != 2
+                or array.shape[1] != width
+                or array.dtype.kind not in "biuf"
+                or not np.isfinite(array).all()
+            ):
+                raise ValueError(f"Expected finite inputs of shape (samples, {width}).")
+            if (
+                not is_numeric
+                and self.route == "recurrent"
+                and (
+                    (array < 0).any()
+                    or (array >= self.alphabet).any()
+                    or not np.equal(array, np.floor(array)).all()
+                )
+            ):
+                raise ValueError("Sequence tokens must be integer indices within the vocabulary.")
+            tensor = torch.as_tensor(
+                array,
+                dtype=(
+                    torch.long if self.route == "recurrent" and not is_numeric else torch.float32
+                ),
+            )
+            if not torch.isfinite(tensor).all():
+                raise ValueError("Inputs must be representable as finite model tensors.")
+            result.append(tensor)
         if len({len(v) for v in result}) != 1:
-            raise ValueError("Peptide inputs must have matching sample counts.")
+            raise ValueError("All inputs must have matching sample counts.")
         return tuple(result)
 
     def _targets(self, y: Any, size: int) -> tuple[Tensor, ...]:
@@ -351,7 +432,7 @@ class RetentionModel(nn.Module):
             with torch.no_grad():
                 for start in range(0, size, batch_size):
                     sl = slice(start, start + batch_size)
-                    preds = self(*(v[sl].to(self.device) for v in inputs))
+                    preds = self._forward_inputs(tuple(v[sl].to(self.device) for v in inputs))
                     labels = tuple(v[sl].to(self.device) for v in targets)
                     loss, losses = self._losses(preds, labels)
                     metrics = []
@@ -414,11 +495,12 @@ class RetentionModel(nn.Module):
                 raise ValueError("Validation split leaves an empty partition.")
             val_x = tuple(v[split:].numpy() for v in inputs)
             validation_data = (
-                val_x if self.siamese else val_x[0],
+                val_x if self.siamese or self.numeric_features else val_x[0],
                 [v[split:].numpy() for v in targets],
             )
             inputs, targets = tuple(v[:split] for v in inputs), tuple(v[:split] for v in targets)
             size = split
+        self._fit_numeric_scaling(inputs)
         options = callbacks or {}
         monitor = "val_loss" if validation_data is not None else "loss"
         history: dict[str, list[float]] = {k: [] for k in self.metrics_names}
@@ -485,7 +567,9 @@ class RetentionModel(nn.Module):
                 for indices in torch.randperm(size).split(batch_size):
                     for optimizer in self.optimizers:
                         optimizer.zero_grad(set_to_none=True)
-                    predictions = self(*(v[indices].to(self.device) for v in inputs))
+                    predictions = self._forward_inputs(
+                        tuple(v[indices].to(self.device) for v in inputs)
+                    )
                     loss, _ = self._losses(
                         predictions, tuple(v[indices].to(self.device) for v in targets)
                     )
@@ -501,7 +585,7 @@ class RetentionModel(nn.Module):
                         optimizer.step()
                 train_x = tuple(v.numpy() for v in inputs)
                 metrics = self.evaluate(
-                    train_x if self.siamese else train_x[0],
+                    train_x if self.siamese or self.numeric_features else train_x[0],
                     [v.numpy() for v in targets],
                     batch_size,
                 )
@@ -573,7 +657,9 @@ class RetentionModel(nn.Module):
         try:
             with torch.inference_mode():
                 for start in range(0, len(inputs[0]), batch_size):
-                    preds = self(*(v[start : start + batch_size].to(self.device) for v in inputs))
+                    preds = self._forward_inputs(
+                        tuple(v[start : start + batch_size].to(self.device) for v in inputs)
+                    )
                     for t in self.tasks:
                         outputs[t].append(self._probability(t, preds[t]).cpu().numpy())
         finally:
@@ -589,6 +675,66 @@ class RetentionModel(nn.Module):
     def count_params(self) -> int:
         """Return total parameter count, excluding running-statistics buffers."""
         return sum(p.numel() for p in self.parameters())
+
+    def target_transform(self, task: str) -> tuple[float, float, str]:
+        """Return multiplier, offset and units mapping a scalar head to reported values."""
+        if task not in self.tasks:
+            raise ValueError(f"Unknown prediction task: {task}")
+        transform = self.params.get("_target_transforms", {}).get(task)
+        if transform is not None:
+            return float(transform["scale"]), float(transform["offset"]), transform["unit"]
+        faims = self.params.get("_faims")
+        if faims is not None and task == "faims_cv":
+            return float(faims["target_scale"]), float(faims["target_mean"]), faims["units"]
+        tutorial = self.params.get("_preprocessing", {})
+        if tutorial.get("schema") == "xirt-api-tutorial-v1" and task == tutorial["target_column"]:
+            return (
+                float(tutorial["target_std"]),
+                float(tutorial["target_mean"]),
+                tutorial["target_units"],
+            )
+        return (
+            float(self.params.get("_target_scales", {}).get(task, 1.0)),
+            0.0,
+            self.params.get("target_units", {}).get(task, "input units"),
+        )
+
+    def predict_frame(self, x: Any, *, index: Any = None, batch_size: int = 512) -> pd.DataFrame:
+        """Return named predictions in original units, preserving an optional input index."""
+        from xirt.predictor import prediction_frame
+
+        return prediction_frame(self, self.predict(x, batch_size=batch_size), index=index)
+
+    def explain(
+        self,
+        x: Any,
+        *,
+        task: str | None = None,
+        index: Any = None,
+        tokens: Any = None,
+        steps: int = 64,
+    ) -> Any:
+        """Explain a continuous prediction at residue level using integrated gradients.
+
+        Embeddings are integrated from zero with sequence lengths held fixed;
+        numeric features are integrated from their fitted training means.
+        Returned contributions and completeness errors use the target's units.
+        """
+        from xirt.explain import integrated_gradients
+
+        return integrated_gradients(
+            self, self._inputs(x), task=task, index=index, tokens=tokens, steps=steps
+        )
+
+    @classmethod
+    def load(cls, location: str | Path, *, device: str = "cpu") -> "RetentionModel":
+        """Reconstruct a native checkpoint through the public tensor-model API."""
+        data = read_checkpoint(location)
+        params = data["params"]
+        params["learning"]["device"] = device
+        model = cls(params, data["input_dim"], data["alphabet"], data["siamese"])
+        model.load_state_dict(data["state_dict"])
+        return model
 
     def save(self, location: str | Path) -> None:
         """Save a versioned tensor checkpoint with reconstruction and vocabulary metadata.
@@ -613,6 +759,8 @@ class RetentionModel(nn.Module):
     def load_weights(self, location: str | Path) -> None:
         """Load strictly compatible 2.0 tensor weights; legacy HDF5 is not accepted."""
         checkpoint = read_checkpoint(location)
+        if checkpoint["params"].get("numeric_features", []) != self.numeric_features:
+            raise ValueError("Checkpoint numeric feature schema differs from the model.")
         if self.route == "recurrent" and checkpoint["params"].get("_alphabet") != self.params.get(
             "_alphabet"
         ):
@@ -623,6 +771,10 @@ class RetentionModel(nn.Module):
         ):
             raise ValueError("Checkpoint encoder configuration differs from model encoder.")
         self.load_state_dict(checkpoint["state_dict"])
+        if self.numeric_features:
+            self.params["_numeric_scaling"] = copy.deepcopy(
+                checkpoint["params"].get("_numeric_scaling")
+            )
 
 
 def read_checkpoint(location: str | Path) -> dict[str, Any]:
@@ -730,11 +882,7 @@ class xiRTNET:
             >>> network.load_model("retention.pt")  # doctest: +SKIP
             >>> predicted_rt = network.model.predict(features)  # doctest: +SKIP
         """
-        data = read_checkpoint(location)
-        params = data["params"]
-        params["learning"]["device"] = self.learning_p.get("device", "cpu")
-        self.model = RetentionModel(params, data["input_dim"], data["alphabet"], data["siamese"])
-        self.model.load_state_dict(data["state_dict"])
+        self.model = RetentionModel.load(location, device=self.learning_p.get("device", "cpu"))
 
     def fine_tune(self, location: str | Path, strategy: str, **options: Any) -> None:
         """Load a base checkpoint and configure native full, frozen, LoKr or LoRA training."""
@@ -746,6 +894,8 @@ class xiRTNET:
             raise RuntimeError("Checkpoint did not construct a model.")
         if self.model.params.get("fine_tuning"):
             raise ValueError("Fine-tuning requires an unadapted base checkpoint.")
+        if self.model.numeric_features != self.params["numeric_features"]:
+            raise ValueError("Fine-tuning numeric feature schema differs from the checkpoint.")
         self.model.params["learning"].update(self.learning_p)
         if self.params.get("_alphabet") is not None and (
             self.model.params.get("_alphabet") != self.params["_alphabet"]
@@ -755,7 +905,7 @@ class xiRTNET:
             {
                 key: copy.deepcopy(value)
                 for key, value in self.params.items()
-                if key.startswith("_") or key == "callbacks"
+                if (key.startswith("_") and key != "_numeric_scaling") or key == "callbacks"
             }
         )
         self.model.params["tracking"] = copy.deepcopy(self.params.get("tracking", {}))
@@ -772,6 +922,8 @@ class xiRTNET:
         old = self.model
         if old is None:
             raise RuntimeError("Build or load a model before adjusting outputs.")
+        if old.numeric_features != self.params["numeric_features"]:
+            raise ValueError("Cannot change numeric feature semantics when adjusting outputs.")
         if old.params.get("fine_tuning"):
             from torch.nn.utils import parametrize
 

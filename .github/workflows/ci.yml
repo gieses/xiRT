@@ -41,7 +41,7 @@ jobs:
       - name: Check modern formatting and notebook dataflow
         run: |
           uv run --no-sync ruff format --check --quiet .
-          uv run --no-sync marimo check --strict xirt/data_pipelines/benchmarks/tf_torch/analyze_results.py examples/train_predict.py examples/fine_tune.py
+          uv run --no-sync marimo check --strict xirt/data_pipelines/benchmarks/tf_torch/analyze_results.py examples/train_predict.py examples/fine_tune.py examples/faims.py examples/analyze_predictions.py
       - name: Fatal checks across retained code and tests
         run: uv run --no-sync ruff check --isolated --select E9,F63,F7,F82 xirt tests
       - name: Type-check modern modules
@@ -80,6 +80,10 @@ jobs:
           .wheel-env/bin/python -I -c "from importlib.metadata import version; import xirt; from xirt.xirtnet import xiRTNET; assert version('xirt-torch') == xirt.__version__"
           .wheel-env/bin/xirt --help
           .wheel-env/bin/xirt --version
+          .wheel-env/bin/xirt faims train --help
+          .wheel-env/bin/xirt faims predict --help
+          .wheel-env/bin/xirt predict --help
+          .wheel-env/bin/xirt explain --help
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ci-distributions

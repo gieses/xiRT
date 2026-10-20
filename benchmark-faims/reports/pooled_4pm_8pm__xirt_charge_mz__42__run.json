@@ -1,0 +1,256 @@
+{
+  "cohort": "pooled_4pm_8pm",
+  "model": "xirt_charge_mz",
+  "seed": 42,
+  "epochs": 42,
+  "best_epoch": 22,
+  "seconds": 65.64550645998679,
+  "checkpoint_sha256": "4143a0971e17e23a064ee938bc76bd48eb62edf3ce2f4d40a87170c9b169f9d4",
+  "checkpoint": "local-data/faims-charge/pooled_4pm_8pm__xirt_charge_mz__42.pt",
+  "params": {
+    "LSTM": {
+      "activation": "tanh",
+      "activity_regularization": "l2",
+      "activityregularizer_value": 0.0,
+      "bidirectional": false,
+      "kernel_regularization": "l2",
+      "kernelregularizer_value": 0.0,
+      "lstm_bn": false,
+      "nlayers": 1,
+      "type": "GRU",
+      "units": 32
+    },
+    "dense": {
+      "activation": [
+        "relu",
+        "relu"
+      ],
+      "dense_bn": [
+        false,
+        false
+      ],
+      "dropout": [
+        0.1,
+        0.1
+      ],
+      "kernel_regularizer": [
+        "l2",
+        "l2"
+      ],
+      "regularization": [
+        false,
+        false
+      ],
+      "regularizer_value": [
+        0.0,
+        0.0
+      ],
+      "neurons": [
+        64,
+        32
+      ],
+      "nlayers": 2
+    },
+    "embedding": {
+      "length": 16
+    },
+    "learning": {
+      "batch_size": 64,
+      "epochs": 150,
+      "learningrate": 0.003,
+      "optimizer": "adamw",
+      "weight_decay": 0.01,
+      "device": "cpu",
+      "seed": 42,
+      "deterministic": true
+    },
+    "output": {
+      "faims_cv-activation": "linear",
+      "faims_cv-column": "faims_cv",
+      "faims_cv-dimension": 1,
+      "faims_cv-loss": "mse",
+      "faims_cv-metrics": "mse",
+      "faims_cv-weight": 1
+    },
+    "siamese": {
+      "use": true,
+      "merge_type": "add",
+      "single_predictions": false
+    },
+    "callbacks": {
+      "check_point": false,
+      "log_csv": false,
+      "early_stopping": true,
+      "early_stopping_patience": 20,
+      "tensor_board": false,
+      "progressbar": false,
+      "reduce_lr": true,
+      "reduce_lr_factor": 0.5,
+      "reduce_lr_patience": 8
+    },
+    "predictions": {
+      "continues": [
+        "faims_cv"
+      ],
+      "fractions": []
+    },
+    "encoder": {
+      "route": "recurrent"
+    },
+    "adapter": null,
+    "fine_tuning": null,
+    "numeric_features": [
+      "precursor_charge",
+      "precursor_mz"
+    ],
+    "tracking": {
+      "enabled": false
+    },
+    "_faims": {
+      "schema": "xirt-faims-v1",
+      "units": "V",
+      "target": "mean observed compensation voltage; not CCS or intensity optimum",
+      "maximum_residues": 60,
+      "vocabulary": [
+        "-OH",
+        "<unk>",
+        "A",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "H-",
+        "I",
+        "K",
+        "L",
+        "M",
+        "N",
+        "P",
+        "Q",
+        "R",
+        "S",
+        "T",
+        "V",
+        "W",
+        "Y",
+        "bsthreeloopK",
+        "bsthreeloopS",
+        "bsthreeloopT",
+        "bsthreeloopY",
+        "bsthreenhtwoK",
+        "bsthreenhtwoS",
+        "bsthreenhtwoT",
+        "bsthreenhtwoY",
+        "bsthreeohK",
+        "bsthreeohS",
+        "bsthreeohT",
+        "bsthreeohY",
+        "ceC",
+        "clA",
+        "clC",
+        "clD",
+        "clE",
+        "clF",
+        "clG",
+        "clH",
+        "clI",
+        "clK",
+        "clL",
+        "clM",
+        "clN",
+        "clP",
+        "clQ",
+        "clR",
+        "clS",
+        "clT",
+        "clV",
+        "clW",
+        "clY",
+        "cloxM",
+        "oxM"
+      ],
+      "target_mean": -47.626725478290425,
+      "target_scale": 10.911911429172115,
+      "training_rows": 3866,
+      "validation_rows": 540,
+      "upstream_revision": "b85482ffc246b2dc669c4592f752568fd9b1baed"
+    },
+    "_alphabet": [
+      "-OH",
+      "<unk>",
+      "A",
+      "C",
+      "D",
+      "E",
+      "F",
+      "G",
+      "H",
+      "H-",
+      "I",
+      "K",
+      "L",
+      "M",
+      "N",
+      "P",
+      "Q",
+      "R",
+      "S",
+      "T",
+      "V",
+      "W",
+      "Y",
+      "bsthreeloopK",
+      "bsthreeloopS",
+      "bsthreeloopT",
+      "bsthreeloopY",
+      "bsthreenhtwoK",
+      "bsthreenhtwoS",
+      "bsthreenhtwoT",
+      "bsthreenhtwoY",
+      "bsthreeohK",
+      "bsthreeohS",
+      "bsthreeohT",
+      "bsthreeohY",
+      "ceC",
+      "clA",
+      "clC",
+      "clD",
+      "clE",
+      "clF",
+      "clG",
+      "clH",
+      "clI",
+      "clK",
+      "clL",
+      "clM",
+      "clN",
+      "clP",
+      "clQ",
+      "clR",
+      "clS",
+      "clT",
+      "clV",
+      "clW",
+      "clY",
+      "cloxM",
+      "oxM"
+    ],
+    "_numeric_scaling": {
+      "columns": [
+        "precursor_charge",
+        "precursor_mz"
+      ],
+      "mean": [
+        4.666321754455566,
+        803.3438720703125
+      ],
+      "scale": [
+        1.0555638074874878,
+        196.16432189941406
+      ],
+      "training_rows": 3866
+    }
+  }
+}

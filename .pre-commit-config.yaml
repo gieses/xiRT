@@ -31,7 +31,7 @@ repos:
         name: Marimo notebook dataflow
         entry: uv run --no-sync marimo check --strict
         language: system
-        files: '^(xirt/data_pipelines/benchmarks/tf_torch/analyze_results\.py|examples/(train_predict|fine_tune)\.py)$'
+        files: '^(xirt/data_pipelines/benchmarks/tf_torch/analyze_results\.py|examples/(train_predict|fine_tune|faims|analyze_predictions)\.py)$'
       - id: bash-syntax
         name: Bash syntax
         entry: bash -n
