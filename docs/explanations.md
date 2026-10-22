@@ -1,5 +1,8 @@
 # Shared prediction and residue-level explanations
 
+For executed predictions, annotated plots and matched RP/SCX/hSAX and FAIMS
+residue examples, see the [illustrated walkthrough](prediction-gallery.md).
+
 Self-contained recurrent RT and FAIMS checkpoints use the same public interface:
 
 ```python

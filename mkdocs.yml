@@ -80,6 +80,8 @@ nav:
       - Recurrent fine-tuning: fine-tuning.md
       - FAIMS compensation voltage: faims.md
       - Prediction explanations: explanations.md
+      - Illustrated prediction walkthrough: prediction-gallery.md
+      - Chromatography model cards: chromatography-models.md
       - Experiment tracking: tracking.md
       - ESM-C and adapters: embeddings.md
   - Benchmarks:

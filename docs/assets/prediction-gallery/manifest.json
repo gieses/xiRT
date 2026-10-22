@@ -1,0 +1,414 @@
+{
+  "training": {
+    "config": {
+      "source": {
+        "record": 4720760,
+        "license": "CC-BY-4.0",
+        "archive": "ecoli.zip",
+        "member": "ecoli/DSS_CSM_anpxirt.csv",
+        "sha256": "3833575aa3ec45d55b1c3f3af2556b97314b26dc5d1880301c18514a0295b72f",
+        "member_crc32": 1470239631,
+        "archive_published_md5": "9e9a1a2db3200f19e87e3c12f7d89e81"
+      },
+      "split": {
+        "seed": 42,
+        "fractions": [
+          0.8,
+          0.1,
+          0.1
+        ],
+        "group": "unordered unmodified peptide pair, across PTMs and link sites"
+      },
+      "sequence_width": 128,
+      "network": {
+        "LSTM": {
+          "activation": "tanh",
+          "activity_regularization": "l2",
+          "activityregularizer_value": 0.0,
+          "bidirectional": true,
+          "kernel_regularization": "l2",
+          "kernelregularizer_value": 0.0,
+          "lstm_bn": false,
+          "nlayers": 2,
+          "type": "GRU",
+          "units": 64
+        },
+        "dense": {
+          "activation": [
+            "relu",
+            "relu"
+          ],
+          "dense_bn": [
+            false,
+            false
+          ],
+          "dropout": [
+            0.1,
+            0.1
+          ],
+          "kernel_regularizer": [
+            "l2",
+            "l2"
+          ],
+          "regularization": [
+            false,
+            false
+          ],
+          "regularizer_value": [
+            0.0,
+            0.0
+          ],
+          "neurons": [
+            128,
+            64
+          ],
+          "nlayers": 2
+        },
+        "embedding": {
+          "length": 32
+        },
+        "learning": {
+          "batch_size": 256,
+          "epochs": 300,
+          "learningrate": 0.001,
+          "optimizer": "adamw",
+          "weight_decay": 0.01,
+          "clip_norm": 5.0,
+          "device": "cpu",
+          "seed": 42,
+          "deterministic": true
+        },
+        "siamese": {
+          "use": true,
+          "merge_type": "add",
+          "single_predictions": false
+        },
+        "callbacks": {
+          "check_point": false,
+          "log_csv": false,
+          "early_stopping": true,
+          "early_stopping_patience": 35,
+          "tensor_board": false,
+          "progressbar": true,
+          "reduce_lr": true,
+          "reduce_lr_factor": 0.5,
+          "reduce_lr_patience": 8
+        },
+        "encoder": {
+          "route": "recurrent"
+        },
+        "tracking": {
+          "enabled": false
+        }
+      }
+    },
+    "source_sha256": {
+      "examples/train_chromatography.py": "31f70ade57947c2449dd0160682d7aab5e0e5529c002ad5c20b66ecb0675e5ef",
+      "examples/chromatography_models.yaml": "8b5f474a796b3a1a37301ee6498e7ec5824eea5def08c7b20b4cc660b3c15298",
+      "xirt/predictor.py": "64e08ba675b41466927f774cf08d4a4863d6cd1e4b313c60fdcb56c6c75da14f",
+      "xirt/xirtnet.py": "564bea1e2c1a5e42a353ad3cd4cf9faf06072eb8e056c87e9f0f16d9e830f03d",
+      "xirt/processing.py": "8ad6a75d0934721f485c39d3a4e73d9c39c5e4fa6b87a6e71530b7d20564c4dd",
+      "xirt/sequences.py": "089886a87204a2a6c0d0d9a7727412fe33fa959893ae5eeeee9c533866d05701"
+    },
+    "torch": "2.14.1+cu130",
+    "python": "3.12.3",
+    "device": "cuda:0",
+    "gpu": "NVIDIA A100 80GB PCIe",
+    "rows": 11072,
+    "pair_groups": 5698,
+    "partitions": {
+      "test": {
+        "csms": 1055,
+        "pairs": 570
+      },
+      "train": {
+        "csms": 8924,
+        "pairs": 4558
+      },
+      "validation": {
+        "csms": 1093,
+        "pairs": 570
+      }
+    },
+    "objective": "training-standardized scalar regression; fractions are not ordinal classifiers"
+  },
+  "models": {
+    "rp": {
+      "tasks": [
+        "rp"
+      ],
+      "epochs": 139,
+      "best_epoch": 104,
+      "seconds": 161.4582284039352,
+      "checkpoint_sha256": "785cfe2ba30c17b9d1f98f50964377a63298471236114c9efbb199f397efbccb",
+      "checkpoint_bytes": 560433,
+      "parameters": 138113,
+      "target_transforms": {
+        "rp": {
+          "scale": 815.286518122031,
+          "offset": 2694.2959220526673,
+          "unit": "s"
+        }
+      }
+    },
+    "scx": {
+      "tasks": [
+        "scx"
+      ],
+      "epochs": 58,
+      "best_epoch": 23,
+      "seconds": 69.40515842300374,
+      "checkpoint_sha256": "458084d1027680ce6576db80a3567a4e07d417ad25f4e5eecfdcf1c535f546fe",
+      "checkpoint_bytes": 560433,
+      "parameters": 138113,
+      "target_transforms": {
+        "scx": {
+          "scale": 2.2895373973376505,
+          "offset": 21.20596145226356,
+          "unit": "fraction"
+        }
+      }
+    },
+    "hsax": {
+      "tasks": [
+        "hsax"
+      ],
+      "epochs": 101,
+      "best_epoch": 66,
+      "seconds": 118.00275698292535,
+      "checkpoint_sha256": "adfbbe291afa332aa2b35246bbe0443b8a280a9bf453cd91490f1c71e8b2b808",
+      "checkpoint_bytes": 560433,
+      "parameters": 138113,
+      "target_transforms": {
+        "hsax": {
+          "scale": 2.279942571606622,
+          "offset": 4.88032272523532,
+          "unit": "fraction"
+        }
+      }
+    },
+    "multitask": {
+      "tasks": [
+        "hsax",
+        "rp",
+        "scx"
+      ],
+      "epochs": 91,
+      "best_epoch": 56,
+      "seconds": 120.907163182972,
+      "checkpoint_sha256": "e47ff853d3f94508b7d07b0e846ee17f31226b90712687aca0f0f9941329c4c5",
+      "checkpoint_bytes": 762995,
+      "parameters": 187779,
+      "target_transforms": {
+        "rp": {
+          "scale": 815.286518122031,
+          "offset": 2694.2959220526673,
+          "unit": "s"
+        },
+        "scx": {
+          "scale": 2.2895373973376505,
+          "offset": 21.20596145226356,
+          "unit": "fraction"
+        },
+        "hsax": {
+          "scale": 2.279942571606622,
+          "offset": 4.88032272523532,
+          "unit": "fraction"
+        }
+      }
+    }
+  },
+  "sizes": {
+    "rp": 560433,
+    "scx": 560433,
+    "hsax": 560433,
+    "multitask": 762995,
+    "total_checkpoint_bytes": 2444294,
+    "compressed_bundle_bytes": 2251797
+  },
+  "checkpoints": {
+    "rp": "785cfe2ba30c17b9d1f98f50964377a63298471236114c9efbb199f397efbccb",
+    "scx": "458084d1027680ce6576db80a3567a4e07d417ad25f4e5eecfdcf1c535f546fe",
+    "hsax": "adfbbe291afa332aa2b35246bbe0443b8a280a9bf453cd91490f1c71e8b2b808",
+    "multitask": "e47ff853d3f94508b7d07b0e846ee17f31226b90712687aca0f0f9941329c4c5"
+  },
+  "faims_checkpoint_sha256": "4143a0971e17e23a064ee938bc76bd48eb62edf3ce2f4d40a87170c9b169f9d4",
+  "faims_checkpoint_bytes": 49621,
+  "faims_table_sha256": "3f6e852640f8c2c588e84670717fe83b2af8c9e7ad97a9e5163d74d5e112b05e",
+  "generator_sha256": "ca51d6606008c5a727063efd35070b8117ee88cdfa3dcf557fe904ed97974a7d",
+  "selection": "First held-out ID with both peptides 8\u201322 residues; independent of predictions/errors",
+  "metrics": [
+    {
+      "model": "rp",
+      "task": "rp",
+      "unit": "s",
+      "n": 1055,
+      "rmse": 136.84190905362883,
+      "mae": 96.3927462877666,
+      "r2": 0.9729040860943435,
+      "pearson_r": 0.9866708324569005,
+      "spearman_rho": 0.9869016912958335
+    },
+    {
+      "model": "scx",
+      "task": "scx",
+      "unit": "fraction",
+      "n": 1055,
+      "rmse": 1.0551595431905225,
+      "mae": 0.6553097187060315,
+      "r2": 0.7714410832674954,
+      "pearson_r": 0.8839892812281895,
+      "spearman_rho": 0.8891669047538149
+    },
+    {
+      "model": "hsax",
+      "task": "hsax",
+      "unit": "fraction",
+      "n": 1055,
+      "rmse": 0.72799855655146,
+      "mae": 0.4675414449230755,
+      "r2": 0.8855879110339546,
+      "pearson_r": 0.9411915731976354,
+      "spearman_rho": 0.9410510100017052
+    },
+    {
+      "model": "multitask",
+      "task": "rp",
+      "unit": "s",
+      "n": 1055,
+      "rmse": 152.8746431645066,
+      "mae": 112.8764119252814,
+      "r2": 0.966182891745749,
+      "pearson_r": 0.9834465705765821,
+      "spearman_rho": 0.9850326749014314
+    },
+    {
+      "model": "multitask",
+      "task": "scx",
+      "unit": "fraction",
+      "n": 1055,
+      "rmse": 1.018478262245712,
+      "mae": 0.6435954740262144,
+      "r2": 0.787055986671259,
+      "pearson_r": 0.8888805060329139,
+      "spearman_rho": 0.8959951852213616
+    },
+    {
+      "model": "multitask",
+      "task": "hsax",
+      "unit": "fraction",
+      "n": 1055,
+      "rmse": 0.7033986755757461,
+      "mae": 0.468336008623313,
+      "r2": 0.8931894943103177,
+      "pearson_r": 0.9454542368234062,
+      "spearman_rho": 0.9474015560288364
+    },
+    {
+      "model": "pooled_4pm_8pm__xirt_charge_mz__42",
+      "task": "faims_cv",
+      "unit": "V",
+      "n": 484,
+      "rmse": 8.169992796782543,
+      "mae": 6.408700925149794,
+      "r2": 0.5252724377070832,
+      "pearson_r": 0.7301001506168073,
+      "spearman_rho": 0.7209097549651402
+    }
+  ],
+  "examples": {
+    "rp": {
+      "model": "multitask",
+      "PSMID": "8847",
+      "observed": 2762.92506,
+      "unit": "s",
+      "prediction": 2803.64501953125,
+      "baseline_prediction": 2447.1943359375,
+      "attribution_sum": 355.4140625,
+      "completeness_error": 1.03662109375,
+      "unknown_token_count": 0.0,
+      "steps": 256,
+      "previous_steps": 128,
+      "previous_completeness_error": -1.022705078125,
+      "max_token_change": 1.231414794921875,
+      "crosslink_tokens": 2,
+      "terminus_contribution": -285.7003936767578
+    },
+    "scx": {
+      "model": "multitask",
+      "PSMID": "8847",
+      "observed": 17.0,
+      "unit": "fraction",
+      "prediction": 17.62594985961914,
+      "baseline_prediction": 21.115379333496094,
+      "attribution_sum": -3.49240779876709,
+      "completeness_error": 0.0029783248901367188,
+      "unknown_token_count": 0.0,
+      "steps": 256,
+      "previous_steps": 128,
+      "previous_completeness_error": 0.0019059181213378906,
+      "max_token_change": 0.0031919479370117188,
+      "crosslink_tokens": 2,
+      "terminus_contribution": -4.678185746073723
+    },
+    "hsax": {
+      "model": "multitask",
+      "PSMID": "8847",
+      "observed": 1.0,
+      "unit": "fraction",
+      "prediction": 1.4140675067901611,
+      "baseline_prediction": 4.895729064941406,
+      "attribution_sum": -3.4878439903259277,
+      "completeness_error": 0.006182432174682617,
+      "unknown_token_count": 0.0,
+      "steps": 256,
+      "previous_steps": 128,
+      "previous_completeness_error": -0.005048274993896484,
+      "max_token_change": 0.006502866744995117,
+      "crosslink_tokens": 2,
+      "terminus_contribution": 0.9927955865859985
+    },
+    "faims_cv": {
+      "model": "pooled_4pm_8pm__xirt_charge_mz__42",
+      "precursor_id": "00d79e1a07d5cd42b2e56115cc6c4202c012a8a5476588e80c1d777322de5a54",
+      "observed": -31.0,
+      "unit": "V",
+      "prediction": -38.96999740600586,
+      "baseline_prediction": -55.774383544921875,
+      "attribution_sum": 16.78522491455078,
+      "completeness_error": 0.019161224365234375,
+      "unknown_token_count": 0.0,
+      "steps": 256,
+      "previous_steps": 128,
+      "previous_completeness_error": -0.02848052978515625,
+      "max_token_change": 0.014676988124847412,
+      "crosslink_tokens": 2,
+      "terminus_contribution": -2.5740573070943356,
+      "numeric": [
+        {
+          "sample": 0,
+          "feature": "precursor_charge",
+          "value": 3.0,
+          "baseline": 4.666321754455566,
+          "attribution": -0.6311873197555542
+        },
+        {
+          "sample": 0,
+          "feature": "precursor_mz",
+          "value": 1263.1114501953125,
+          "baseline": 803.3438720703125,
+          "attribution": 16.363433837890625
+        }
+      ]
+    }
+  },
+  "figures": {
+    "faims-predictions.png": "1e6340ff5b7cfad6ff58a267d8b4a2de9ad35e300ab749120ceed34aed26d9d8",
+    "faims-residues.png": "3636f12273ee30f661a2b2c1b73256681b323bdeaa5afc834399b9d1ae4f0bf6",
+    "hsax-residues.png": "1d43c9605291df7eb12ae647e93c2e0b1931d91a17644bd534eccad48e85bf71",
+    "retention-predictions.png": "138d862c5ec3e8644e69b3877deeb4bae0eb0704c2167aa4f1bdeea4f6d899ef",
+    "rp-residues.png": "2ee6d73ddc074afc631b2daf837272d9cf5510fa5900247136c9645eb581c980",
+    "scx-residues.png": "8343798e8656c8b7d6a379293a6381530346989a0edde7a911ba59ef48bfec43"
+  },
+  "interpretation": "Model attributions relative to zero embeddings/fixed lengths and training-mean numeric context; not causal effects."
+}
