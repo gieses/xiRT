@@ -91,8 +91,10 @@ def training(
     validation_mask,
     xiRTNET,
 ):
+    params = network_params()
+    params["_preprocessing"] = metadata
     network = xiRTNET(
-        network_params(),
+        params,
         input_dim=metadata["sequence_width"],
         embedding_dim=len(metadata["vocabulary"]) + 1,
     )
@@ -174,9 +176,9 @@ def predictions(
         rtol=1e-6,
         atol=1e-6,
     )
-    test_table["predicted_seconds"] = (
-        predicted * restored_metadata["target_std"] + restored_metadata["target_mean"]
-    )
+    test_table["predicted_seconds"] = restored.model.predict_frame(reencoded)[
+        "rp-prediction"
+    ].to_numpy()
     rmse_seconds = float(
         np.sqrt(np.mean((test_table["rp"] - test_table["predicted_seconds"]) ** 2))
     )
@@ -205,15 +207,11 @@ def predictions(
 
 @app.cell
 def held_out_plot(metrics, mo, output, plt, rmse_seconds, test_table):
-    prediction_figure, prediction_axis = plt.subplots()
-    prediction_axis.scatter(test_table["rp"], test_table["predicted_seconds"], alpha=0.6, s=18)
-    limits = [
-        min(test_table["rp"].min(), test_table["predicted_seconds"].min()),
-        max(test_table["rp"].max(), test_table["predicted_seconds"].max()),
-    ]
-    prediction_axis.plot(limits, limits, "--", color="grey")
-    prediction_axis.set(xlabel="Observed RP (seconds)", ylabel="Predicted RP (seconds)")
-    prediction_axis.set_title(f"Held-out RMSE {rmse_seconds:.0f} s; R2 {metrics.iloc[0]['r2']:.2f}")
+    from xirt.qc import prediction_qc
+
+    prediction_figure = prediction_qc(
+        test_table["rp"], test_table["predicted_seconds"], name="Held-out RP", unit="s"
+    )
     prediction_figure.savefig(output / "test-predictions.png", dpi=150, bbox_inches="tight")
     mo.vstack(
         [
@@ -232,15 +230,14 @@ def preprocessing_notes(mo):
     mo.md("""
     ## Reusing the checkpoint
 
-    Inference needs the saved vocabulary, sequence width, crosslink-token rule
-    and training-only target mean and standard deviation. The cell above loads
-    both files, re-encodes the test rows and checks predictions against the
-    in-memory model. Prediction does not require `compile()`.
+    The checkpoint contains the vocabulary, crosslink-token rule and training-only
+    target transformation. `Predictor.load("model.pt")` and `xirt predict` can
+    therefore predict from the peptide and link-position columns without RT labels.
+    `preprocessing.json` is an auditable copy, not a CLI `encoder.json`.
 
-    `preprocessing.json` is this example's API format, **not** the CLI's
-    `encoder.json`. For modified peptides or CLI inference, use xiRT's
-    production preprocessing and exported metadata instead of this restricted
-    tokenizer. Do not reuse the tutorial's weights as a scientific baseline.
+    This tutorial tokenizer accepts canonical unmodified peptides only. Use
+    the production xiRT tokenizer for modified RT data, and open
+    `examples/analyze_predictions.py` to inspect residue-level contributions.
     """)
     return
 

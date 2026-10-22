@@ -66,6 +66,15 @@ def test_sdist_contains_example_sources_but_not_generated_results():
         validate_contents(["xirt_torch-2.0.0/examples/results/predictions.csv"], "", wheel=False)
 
 
+@pytest.mark.parametrize("wheel", [False, True])
+def test_distributions_reject_generated_notebook_state(wheel):
+    path = "examples/__marimo__/session/faims.py.json"
+    if not wheel:
+        path = "xirt_torch-2.0.1/" + path
+    with pytest.raises(SystemExit, match="content in distribution"):
+        validate_contents([path], "", wheel=wheel)
+
+
 def test_distribution_name_does_not_change_import_or_cli():
     project = tomllib.loads((ROOT / "pyproject.toml").read_text())["project"]
     assert project["name"] == "xirt-torch"

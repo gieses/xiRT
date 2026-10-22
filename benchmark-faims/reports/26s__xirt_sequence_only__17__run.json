@@ -1,0 +1,238 @@
+{
+  "cohort": "26s",
+  "model": "xirt_sequence_only",
+  "seed": 17,
+  "epochs": 37,
+  "best_epoch": 17,
+  "seconds": 32.68811112793628,
+  "checkpoint_sha256": "193062737dc96260f2cf978018c2eba2d2183b9ed8db5ce69625253e9bb0736e",
+  "checkpoint": "local-data/faims-charge/26s__xirt_sequence_only__17.pt",
+  "params": {
+    "LSTM": {
+      "activation": "tanh",
+      "activity_regularization": "l2",
+      "activityregularizer_value": 0.0,
+      "bidirectional": false,
+      "kernel_regularization": "l2",
+      "kernelregularizer_value": 0.0,
+      "lstm_bn": false,
+      "nlayers": 1,
+      "type": "GRU",
+      "units": 32
+    },
+    "dense": {
+      "activation": [
+        "relu",
+        "relu"
+      ],
+      "dense_bn": [
+        false,
+        false
+      ],
+      "dropout": [
+        0.1,
+        0.1
+      ],
+      "kernel_regularizer": [
+        "l2",
+        "l2"
+      ],
+      "regularization": [
+        false,
+        false
+      ],
+      "regularizer_value": [
+        0.0,
+        0.0
+      ],
+      "neurons": [
+        64,
+        32
+      ],
+      "nlayers": 2
+    },
+    "embedding": {
+      "length": 16
+    },
+    "learning": {
+      "batch_size": 64,
+      "epochs": 150,
+      "learningrate": 0.003,
+      "optimizer": "adamw",
+      "weight_decay": 0.01,
+      "device": "cpu",
+      "seed": 17,
+      "deterministic": true
+    },
+    "output": {
+      "faims_cv-activation": "linear",
+      "faims_cv-column": "faims_cv",
+      "faims_cv-dimension": 1,
+      "faims_cv-loss": "mse",
+      "faims_cv-metrics": "mse",
+      "faims_cv-weight": 1
+    },
+    "siamese": {
+      "use": true,
+      "merge_type": "add",
+      "single_predictions": false
+    },
+    "callbacks": {
+      "check_point": false,
+      "log_csv": false,
+      "early_stopping": true,
+      "early_stopping_patience": 20,
+      "tensor_board": false,
+      "progressbar": false,
+      "reduce_lr": true,
+      "reduce_lr_factor": 0.5,
+      "reduce_lr_patience": 8
+    },
+    "predictions": {
+      "continues": [
+        "faims_cv"
+      ],
+      "fractions": []
+    },
+    "encoder": {
+      "route": "recurrent"
+    },
+    "adapter": null,
+    "fine_tuning": null,
+    "numeric_features": [],
+    "tracking": {
+      "enabled": false
+    },
+    "_faims": {
+      "schema": "xirt-faims-v1",
+      "units": "V",
+      "target": "mean observed compensation voltage; not CCS or intensity optimum",
+      "maximum_residues": 60,
+      "vocabulary": [
+        "-OH",
+        "<unk>",
+        "A",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "H-",
+        "I",
+        "K",
+        "L",
+        "M",
+        "N",
+        "P",
+        "Q",
+        "R",
+        "S",
+        "T",
+        "V",
+        "W",
+        "Y",
+        "bsthreeloopK",
+        "bsthreeloopS",
+        "bsthreeloopT",
+        "bsthreeloopY",
+        "bsthreenhtwoK",
+        "bsthreenhtwoS",
+        "bsthreenhtwoT",
+        "bsthreenhtwoY",
+        "bsthreeohK",
+        "bsthreeohS",
+        "bsthreeohT",
+        "bsthreeohY",
+        "ceC",
+        "clA",
+        "clC",
+        "clD",
+        "clE",
+        "clF",
+        "clG",
+        "clH",
+        "clI",
+        "clK",
+        "clL",
+        "clM",
+        "clN",
+        "clP",
+        "clQ",
+        "clR",
+        "clS",
+        "clT",
+        "clV",
+        "clW",
+        "clY",
+        "cloxM",
+        "oxM"
+      ],
+      "target_mean": -50.862993688392095,
+      "target_scale": 9.7927634630012,
+      "training_rows": 2114,
+      "validation_rows": 367,
+      "upstream_revision": "b85482ffc246b2dc669c4592f752568fd9b1baed"
+    },
+    "_alphabet": [
+      "-OH",
+      "<unk>",
+      "A",
+      "C",
+      "D",
+      "E",
+      "F",
+      "G",
+      "H",
+      "H-",
+      "I",
+      "K",
+      "L",
+      "M",
+      "N",
+      "P",
+      "Q",
+      "R",
+      "S",
+      "T",
+      "V",
+      "W",
+      "Y",
+      "bsthreeloopK",
+      "bsthreeloopS",
+      "bsthreeloopT",
+      "bsthreeloopY",
+      "bsthreenhtwoK",
+      "bsthreenhtwoS",
+      "bsthreenhtwoT",
+      "bsthreenhtwoY",
+      "bsthreeohK",
+      "bsthreeohS",
+      "bsthreeohT",
+      "bsthreeohY",
+      "ceC",
+      "clA",
+      "clC",
+      "clD",
+      "clE",
+      "clF",
+      "clG",
+      "clH",
+      "clI",
+      "clK",
+      "clL",
+      "clM",
+      "clN",
+      "clP",
+      "clQ",
+      "clR",
+      "clS",
+      "clT",
+      "clV",
+      "clW",
+      "clY",
+      "cloxM",
+      "oxM"
+    ]
+  }
+}

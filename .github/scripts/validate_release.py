@@ -19,15 +19,24 @@ def validate_contents(names: list[str], metadata: str, *, wheel: bool) -> None:
         relative = parts if wheel else parts[1:]
         benchmark_code = relative[:3] == ("xirt", "data_pipelines", "benchmarks")
         tutorial_output = relative[:2] == ("examples", "results")
+        notebook_state = "__marimo__" in relative
         tutorial_in_wheel = wheel and relative[:1] == ("examples",)
         if (
             (
                 relative
                 and relative[0]
-                in {"benchmark-tf-torch", "benchmarks", "documentation", "models", "sample_data"}
+                in {
+                    "benchmark-tf-torch",
+                    "benchmark-faims",
+                    "benchmarks",
+                    "documentation",
+                    "models",
+                    "sample_data",
+                }
             )
             or (benchmark_code and (wheel or not name.endswith(".py")))
             or tutorial_output
+            or notebook_state
             or tutorial_in_wheel
             or name.endswith((".pt", ".h5", ".hdf5", ".bin"))
         ):

@@ -78,6 +78,8 @@ nav:
       - Scientific configuration: configuration.md
       - Outputs and provenance: results.md
       - Recurrent fine-tuning: fine-tuning.md
+      - FAIMS compensation voltage: faims.md
+      - Prediction explanations: explanations.md
       - Experiment tracking: tracking.md
       - ESM-C and adapters: embeddings.md
   - Benchmarks:

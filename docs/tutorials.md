@@ -1,6 +1,6 @@
 # Training and fine-tuning notebooks
 
-Two CPU notebooks cover the recurrent Python API. Both include observed
+The RT and FAIMS CPU notebooks cover the recurrent Python API. They include observed
 data, run without downloads and save outputs under `examples/results/`.
 They are marimo notebooks stored as Python source, so their cells can also run
 as scripts.
@@ -11,6 +11,8 @@ Use a source checkout with the locked CPU environment:
 uv sync --locked --extra cpu
 uv run --no-sync marimo edit examples/train_predict.py --host 127.0.0.1
 uv run --no-sync marimo edit examples/fine_tune.py --host 127.0.0.1
+uv run --no-sync marimo edit examples/faims.py --host 127.0.0.1
+uv run --no-sync marimo edit examples/analyze_predictions.py --host 127.0.0.1
 ```
 
 Run the examples without opening a notebook server:
@@ -67,11 +69,11 @@ crosslink-residue tokens, zero padding and a fixed width of 50. Target
 normalization is fitted only on training rows. Its metadata file records that
 contract, the data checksum and partition IDs.
 
-This deliberately restricted tokenizer excludes modified peptides. Its
-`preprocessing.json` is an example-specific API format, **not** a CLI
-`encoder.json`. For production CLI use, follow the
-[configuration guide](configuration.md) and retain the exported encoder and
-checkpoint metadata together.
+This deliberately restricted tokenizer excludes modified peptides. The checkpoint
+embeds its preprocessing contract, so `Predictor.load` and `xirt predict` can use
+the peptide/site columns directly without observed RT labels. The accompanying
+`preprocessing.json` is an auditable copy, **not** a legacy CLI `encoder.json`.
+The [configuration guide](configuration.md) covers production training inputs.
 
 ## Fine-tune from a checkpoint
 
@@ -108,7 +110,45 @@ the four strategies' learning curves.
 See the
 [fine-tuning guide](fine-tuning.md) for configuration and compatibility details.
 
-## What the examples do not measure
+## Train a charge-aware FAIMS model
+
+`examples/faims.py` fits xiRT on 915 bundled precursors from 256 peptide-pair
+groups. It uses charge context by default; change `feature_set` to `sequence`
+or `charge-mz` for the other supported variants. It saves a self-contained
+checkpoint, learning curves and held-out predictions under `examples/results/faims/`.
+Both RT and FAIMS scatterplots annotate Pearson r, Spearman rho, predictive
+R-squared and RMSE. A training-mean predictor provides a simple reference.
+The default FAIMS example run has 76 held-out precursors: RMSE 8.82 V,
+Pearson r 0.747 and Spearman rho 0.755, versus training-mean RMSE 12.80 V.
+One held-out precursor contains an unseen token; inspect its coverage warning.
+These small-example scores are not the full benchmark results.
+
+```bash
+make notebook-faims
+```
+
+FAIMS outputs are compensation voltages in volts, **not collision cross
+sections**. See the [FAIMS guide](faims.md) and `benchmark-faims/README.md`
+in the source checkout for the protocol, data preparation and reproduction.
+No benchmark weights or downloads are required. The bundled subset overlaps the
+full benchmark, so it is not an independent validation cohort.
+
+## Inspect predictions at residue level
+
+After running the RT and FAIMS training examples, open
+`examples/analyze_predictions.py` (or `make notebook-analysis`).
+It reloads both checkpoints using `xirt.predictor.Predictor`, plots common QC
+and lets you select a held-out crosslink for signed residue-level explanations.
+Crosslink positions, PTMs, termini and numeric precursor features are retained.
+Tables, annotated plots and the completeness diagnostic are saved under
+`examples/results/analysis/`.
+
+The analysis notebook never trains models. Missing checkpoints produce an
+explicit instruction to run the corresponding example.
+See [prediction explanations](explanations.md) for the baseline definition,
+API, command line and interpretation limits.
+
+## What the retention-time examples do not measure
 
 Both notebooks use 2,048 distinct observed E. coli peptide pairs: 1,536 training,
 256 validation and 256 test pairs. Only target-target identifications at

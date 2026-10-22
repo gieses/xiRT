@@ -1,0 +1,89 @@
+{
+  "schema": "xirt-faims-benchmark-v1",
+  "upstream_repository": "https://github.com/Rappsilber-Laboratory/xiFAIMS",
+  "upstream_revision": "b85482ffc246b2dc669c4592f752568fd9b1baed",
+  "upstream_license": "Apache-2.0",
+  "datasets": {
+    "4pm": {
+      "file": "4PM_DSS_LS_nonunique1pCSM.csv",
+      "sha256": "0222301423a3906b7a2788620eecb1e7bcb61bdb40c3c91183517d11f7971dcc"
+    },
+    "8pm": {
+      "file": "8PM_DSS_Liu_nonunique1pCSM.csv",
+      "sha256": "5539af6102f71ddeb532b53fbb994460d5ceead41bb21eb9b4116f9431ac45f8"
+    },
+    "26s": {
+      "file": "26S_BS3_LS_nonunique1pCSM.csv",
+      "sha256": "917f85c08ee8190646b2a540e9d60f4f5d55055d1d5bc55ea2b021d966149139"
+    },
+    "293t": {
+      "file": "293T_DSSO_nonunique1pCSM.csv",
+      "sha256": "a2ffbdd30a701471352deffb511efd010272db6177b889fa9355249db71d8c0a"
+    }
+  },
+  "training_cohorts": {
+    "pooled_4pm_8pm": ["4pm", "8pm"],
+    "26s": ["26s"],
+    "293t": ["293t"]
+  },
+  "transfer": {
+    "source": "pooled_4pm_8pm",
+    "targets": ["26s", "293t"],
+    "remove_shared_unmodified_pairs": true
+  },
+  "target": {
+    "name": "faims_cv",
+    "units": "V",
+    "definition": "CSM-weighted mean observed compensation voltage per source, modified peptide pair, link sites and charge",
+    "not_equivalent_to": ["calibrated collision cross section", "intensity-calibrated optimal compensation voltage"],
+    "target_target_only": true,
+    "maximum_fdr": 0.01
+  },
+  "split": {
+    "group": "unordered unmodified peptide pair, irrespective of charge, PTMs or link positions",
+    "seed": 42,
+    "fractions": [0.75, 0.125, 0.125],
+    "training_only_preprocessing": ["token vocabulary", "numeric normalization", "target normalization"]
+  },
+  "models": ["xirt_precursor", "xirt_sequence_only"],
+  "baselines": ["training_mean", "charge_mean", "hist_gradient_boosting"],
+  "initialization_seeds": [17, 42, 73],
+  "numeric_features": ["precursor_charge", "precursor_mz", "precursor_mass"],
+  "training": {
+    "maximum_epochs": 150,
+    "batch_size": 64,
+    "optimizer": "adamw",
+    "learning_rate": 0.003,
+    "weight_decay": 0.01,
+    "early_stopping_patience": 20,
+    "reduce_lr_patience": 8,
+    "reduce_lr_factor": 0.5,
+    "restore_best_validation_weights": true,
+    "cpu_threads": 2
+  },
+  "architecture": {
+    "encoder": "shared unidirectional GRU",
+    "embedding_width": 16,
+    "gru_units": 32,
+    "dense_units": [64, 32],
+    "dropout": 0.1,
+    "merge": "add",
+    "maximum_residues": 60
+  },
+  "evaluation": {
+    "metrics": ["rmse_v", "mae_v", "r2"],
+    "stratify_by": ["precursor_charge", "source"],
+    "test_used_for_selection": false,
+    "seed_variation_is_biological_replication": false,
+    "unknown_tokens": "reserved token with explicit prediction counts and warnings",
+    "tree_parameters": {
+      "loss": "squared_error",
+      "max_iter": 200,
+      "max_leaf_nodes": 15,
+      "learning_rate": 0.05,
+      "l2_regularization": 1.0,
+      "early_stopping": false,
+      "random_state": 42
+    }
+  }
+}

@@ -115,6 +115,12 @@ def arg_parser() -> argparse.ArgumentParser:  # pragma: not covered
     )
     parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     parser.set_defaults(write=True)
+    from xirt.faims import add_faims_subcommands
+    from xirt.predictor import add_prediction_subcommands
+
+    subparsers = parser.add_subparsers(dest="command")
+    add_faims_subcommands(subparsers)
+    add_prediction_subcommands(subparsers)
     return parser
 
 
@@ -230,6 +236,8 @@ def xirt_runner(
             xirt_params.get("encoder", {}).get("route", "recurrent")
         ):
             raise ValueError("Checkpoint and configured encoder routes differ.")
+        if saved["params"].get("numeric_features", []) != xirt_params.get("numeric_features", []):
+            raise ValueError("Checkpoint and configured numeric feature schemas differ.")
         # Preserve token semantics and padding width when transferring or predicting.
         learning_params["preprocessing"]["max_length"] = saved["params"].get(
             "_sequence_length", saved["input_dim"]
@@ -263,6 +271,7 @@ def xirt_runner(
         column_names=xirt_params.get("column_names", const.default_column_names),
         le=encoder,
         fraction_levels=fraction_levels,
+        numeric_columns=xirt_params.get("numeric_features", []),
     )
     xirt_params["_alphabet"] = training_data.le.classes_.tolist()
     xirt_params["_sequence_length"] = training_data.features1.shape[1]
@@ -713,7 +722,11 @@ def xirt_runner(
         # store data
         training_data.psms.to_csv(os.path.join(outpath, "processed_psms.csv.gz"))
         training_data_Xy = (
-            (training_data.features1, training_data.features2),
+            (
+                training_data.get_features(training_data.psms.index)
+                if xirt_params.get("numeric_features")
+                else (training_data.features1, training_data.features2)
+            ),
             training_data.get_classes(
                 training_data.psms.index, frac_cols=frac_cols, cont_cols=cont_cols
             ),
@@ -750,6 +763,14 @@ def main() -> None:  # pragma: no cover
     parser = arg_parser()
 
     args = parser.parse_args(sys.argv[1:])
+    if args.command in {"predict", "explain"}:
+        xr.run_prediction_command(args)
+        return
+    if args.command == "faims":
+        from xirt.faims import run_faims_command
+
+        run_faims_command(args)
+        return
     if args.sample_learning_params or args.sample_xirt_params:
         for outfile, contents in (
             (args.sample_learning_params, const.learning_params),

@@ -2,6 +2,9 @@
 
 import logging
 import sys
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -16,10 +19,289 @@ from xirt import sequences as xs
 logger = logging.getLogger("xirt").getChild(__name__)
 
 
+@dataclass
+class PeptideInputs:
+    """Encoded branches and their row/token mapping for prediction and explanation."""
+
+    features: tuple[Any, ...]
+    tokens: list[list[list[str]]]
+    index: pd.Index
+    swapped: np.ndarray
+    unknown_token_count: np.ndarray
+
+
+def prediction_frame(model, predictions, *, index=None, original_units=True):
+    """Format native task outputs consistently for API, CLI and legacy ModelData."""
+    arrays = [predictions] if len(model.tasks) == 1 else predictions
+    columns = {}
+    for task, values in zip(model.tasks, arrays, strict=True):
+        activation = model.params["output"][f"{task}-activation"]
+        if activation in {"linear", "relu"}:
+            if model.params["output"][f"{task}-dimension"] != 1:
+                raise ValueError("Tabular regression predictions require scalar task heads.")
+            scale, offset, _ = model.target_transform(task) if original_units else (1.0, 0.0, "")
+            columns[f"{task}-prediction"] = np.asarray(values).reshape(-1) * scale + offset
+        elif activation == "softmax":
+            columns[f"{task}-prediction"] = np.argmax(values, axis=1)
+            columns[f"{task}-probability"] = np.max(values, axis=1)
+        elif activation == "sigmoid":
+            columns[f"{task}-prediction"] = sigmoid_to_class(values)
+        else:
+            raise ValueError(f"Unsupported prediction activation: {activation}")
+    return pd.DataFrame(columns, index=index)
+
+
+class Predictor:
+    """Load a self-contained RT or FAIMS checkpoint for label-free prediction and XAI.
+
+    Raw RT inputs follow the checkpoint's saved columns/preprocessing. Tutorial
+    checkpoints embed their explicit tokenizer metadata. FDR, scores and target
+    labels are not needed for inference. Frozen ESM encoders use the ESM API.
+    """
+
+    def __init__(self, model):
+        if model.route != "recurrent":
+            raise ValueError(
+                "Raw peptide prediction requires a recurrent checkpoint; use the ESM API."
+            )
+        self.model = model
+        self.faims = None
+
+    @classmethod
+    def load(cls, location, *, device="cpu"):
+        """Load RT and FAIMS checkpoints through one public entry point."""
+        predictor = cls(xirtnet.RetentionModel.load(location, device=device))
+        if "_faims" in predictor.model.params:
+            from xirt.faims import FAIMSPredictor
+
+            predictor.faims = FAIMSPredictor.load(location, device=device)
+            predictor.model = predictor.faims.model
+        return predictor
+
+    def encode(self, frame):
+        """Encode raw peptides without sorting/dropping rows or fitting preprocessing."""
+        if self.faims is not None:
+            return self.faims.encode(frame)
+        if frame.empty:
+            raise ValueError("Peptide input cannot be empty.")
+        params = self.model.params
+        data = frame.copy().reset_index(drop=True)
+        tutorial = params.get("_preprocessing", {})
+        branches = (1, 2) if self.model.siamese else (1,)
+        swapped = np.zeros(len(data), dtype=bool)
+        if tutorial.get("schema") == "xirt-api-tutorial-v1":
+            vocabulary = tutorial["vocabulary"]
+            tokens = []
+            for branch in branches:
+                column, site = f"Peptide{branch}", f"LinkPos{branch}"
+                if not {column, site} <= set(data):
+                    raise ValueError(f"Missing peptide inference columns: {column}, {site}")
+                part = []
+                for sequence, position in zip(data[column], data[site], strict=True):
+                    if (
+                        not isinstance(sequence, str)
+                        or not sequence
+                        or not set(sequence) <= set("ACDEFGHIKLMNPQRSTVWY")
+                    ):
+                        raise ValueError(
+                            "Tutorial RT checkpoints require canonical unmodified peptides."
+                        )
+                    if not isinstance(position, (int, np.integer)) or not 1 <= position <= len(
+                        sequence
+                    ):
+                        raise ValueError(
+                            "Crosslink positions must be one-based integers within the peptide."
+                        )
+                    part.append(
+                        [f"{aa}*" if i == position else aa for i, aa in enumerate(sequence, 1)]
+                    )
+                tokens.append(part)
+        else:
+            provenance = params.get("_provenance", {})
+            preprocessing = provenance.get("preprocessing")
+            if preprocessing is None or "_alphabet" not in params:
+                raise ValueError("Checkpoint lacks raw peptide preprocessing metadata.")
+            columns = params.get("column_names", const.default_column_names)
+            seq_cols = [columns[f"peptide{i}_sequence"] for i in branches]
+            required = list(seq_cols)
+            if preprocessing["cl_residue"]:
+                required += [columns["link_pos_basename"] + str(i) for i in branches]
+            required += [c for c in self.model.numeric_features if c not in required]
+            missing = set(required) - set(data)
+            if missing:
+                raise ValueError(f"Missing peptide inference columns: {sorted(missing)}")
+            data = data[required].copy()
+            if any(
+                not data[c].map(lambda v: isinstance(v, str) and bool(v)).all() for c in seq_cols
+            ):
+                raise ValueError("Peptides must be nonempty strings.")
+            if self.model.siamese:
+                data = xs.reorder_sequences(data, column_names=columns)
+                swapped = data["swapped"].to_numpy()
+            prepared = xp.prepare_seqs(data, seq_cols)
+            if preprocessing["cl_residue"]:
+                for branch, column in zip(branches, seq_cols, strict=True):
+                    sites = data[columns["link_pos_basename"] + str(branch)]
+                    if any(
+                        not isinstance(site, (int, np.integer))
+                        or not 1 <= site <= len(sequence) - 2
+                        for sequence, site in zip(prepared["Seqar_" + column], sites, strict=True)
+                    ):
+                        raise ValueError(
+                            "Crosslink positions must be one-based integers within the peptide."
+                        )
+                xs.modify_cl_residues(prepared, seq_cols, column_names=columns)
+            tokens = [prepared["Seqar_" + column].tolist() for column in seq_cols]
+            if provenance.get("training", {}).get("sequence_type") == "pseudolinear":
+                raise ValueError("Raw pseudolinear inference requires the legacy xiRT workflow.")
+            vocabulary = {token: i + 1 for i, token in enumerate(params["_alphabet"])}
+        encoded = []
+        unknown = np.zeros(len(data), dtype=np.int64)
+        for branch in tokens:
+            array = np.zeros((len(data), self.model.input_dim), dtype=np.int64)
+            for row, sequence in enumerate(branch):
+                if len(sequence) > self.model.input_dim:
+                    raise ValueError("Peptide exceeds checkpoint sequence width; no truncation.")
+                unseen = [token for token in sequence if token not in vocabulary]
+                if unseen:
+                    raise ValueError(
+                        f"Checkpoint cannot encode unseen residue/modification tokens: {unseen}"
+                    )
+                array[row, -len(sequence) :] = [vocabulary[token] for token in sequence]
+            encoded.append(array)
+        features = tuple(encoded)
+        if self.model.numeric_features:
+            missing = set(self.model.numeric_features) - set(data)
+            if missing:
+                raise ValueError(f"Missing numeric feature columns: {sorted(missing)}")
+            features += (data[self.model.numeric_features],)
+        return PeptideInputs(features, tokens, frame.index, swapped, unknown)
+
+    def predict(self, frame):
+        """Return task-prediction columns in original target units and input row order."""
+        if self.faims is not None:
+            return self.faims.predict(frame)
+        encoded = self.encode(frame)
+        result = self.model.predict_frame(encoded.features, index=frame.index)
+        result["unknown_token_count"] = encoded.unknown_token_count
+        return result
+
+    def explain(self, frame, *, task=None, steps=64):
+        """Return residue/numeric attributions mapped back to the input peptide order."""
+        encoded = self.encode(frame)
+        result = self.model.explain(
+            encoded.features, task=task, index=frame.index, tokens=encoded.tokens, steps=steps
+        )
+        swapped = encoded.swapped[result.residues["sample"].to_numpy()]
+        result.residues.loc[swapped, "peptide"] = 3 - result.residues.loc[swapped, "peptide"]
+        result.residues = result.residues.sort_values(
+            ["sample", "peptide", "position"], kind="stable"
+        ).reset_index(drop=True)
+        result.summary["unknown_token_count"] = encoded.unknown_token_count
+        return result
+
+
+def add_prediction_subcommands(subparsers):
+    """Register checkpoint-driven commands shared by retention-time and FAIMS models."""
+    predict = subparsers.add_parser("predict", help="Predict RT or FAIMS from a saved checkpoint.")
+    predict.add_argument("--input", required=True, type=Path)
+    predict.add_argument("--checkpoint", required=True, type=Path)
+    predict.add_argument("--output", required=True, type=Path)
+    predict.add_argument(
+        "--qc", type=Path, help="QC directory; requires an observed target column."
+    )
+    predict.add_argument("--observed", help="Observed column for QC; never used as a model input.")
+    predict.add_argument("--task", help="Continuous task to use for optional QC.")
+    explain = subparsers.add_parser("explain", help="Explain RT or FAIMS at residue level.")
+    explain.add_argument("--input", required=True, type=Path)
+    explain.add_argument("--checkpoint", required=True, type=Path)
+    explain.add_argument("--output", required=True, type=Path)
+    explain.add_argument("--task", help="Continuous task; required for multi-task models.")
+    explain.add_argument("--steps", type=int, default=64)
+    explain.add_argument("--limit", type=int, help="Explain only the first N input rows.")
+
+
+def run_prediction_command(args):
+    """Use one prediction/explanation/QC path regardless of the checkpoint's target."""
+    import json
+
+    import matplotlib.pyplot as plt
+
+    from xirt import qc
+
+    predictor = Predictor.load(args.checkpoint)
+    frame = pd.read_csv(args.input)
+    if getattr(args, "command", None) == "explain":
+        if args.limit is not None:
+            if args.limit < 1:
+                raise ValueError("--limit must be positive.")
+            frame = frame.head(args.limit)
+        explanation = predictor.explain(frame, task=args.task, steps=args.steps)
+        args.output.mkdir(parents=True, exist_ok=True)
+        explanation.residues.to_csv(args.output / "residues.csv", index=False)
+        explanation.numeric.to_csv(args.output / "numeric.csv", index=False)
+        explanation.summary.to_csv(args.output / "summary.csv", index_label="input_index")
+        (args.output / "explanation.json").write_text(
+            json.dumps(
+                {
+                    "task": explanation.task,
+                    "unit": explanation.unit,
+                    "steps": args.steps,
+                    "method": "embedding integrated gradients",
+                    "embedding_baseline": "zero embedding, fixed sequence lengths and padding masks",
+                    "numeric_baseline": "fitted training means",
+                    "interpretation": "signed model contributions, not causal chemical effects",
+                },
+                indent=2,
+                allow_nan=False,
+            )
+            + "\n"
+        )
+        figure = qc.plot_residue_attributions(explanation)
+        figure.savefig(args.output / "residues.png", dpi=150)
+        plt.close(figure)
+        return
+    predictions = predictor.predict(frame)
+    output = frame.copy()
+    for column in predictions:
+        output[column] = predictions[column]
+    directory = getattr(args, "qc", None)
+    if directory is not None:
+        task = getattr(args, "task", None)
+        if task is None:
+            if len(predictor.model.tasks) != 1:
+                raise ValueError("Select --task for QC of a multi-task checkpoint.")
+            task = predictor.model.tasks[0]
+        if task not in predictor.model.tasks:
+            raise ValueError(f"Unknown prediction task: {task}")
+        observed = (
+            getattr(args, "observed", None) or predictor.model.params["output"][f"{task}-column"]
+        )
+        if observed not in frame:
+            raise ValueError(f"QC requires an observed target column: {observed}")
+        if predictor.model.params["output"][f"{task}-activation"] not in {"linear", "relu"}:
+            raise ValueError("Shared regression QC requires a continuous task.")
+        _, _, unit = predictor.model.target_transform(task)
+        scores = qc.prediction_metrics(frame[observed], predictions[f"{task}-prediction"])
+        figure = qc.prediction_qc(
+            frame[observed], predictions[f"{task}-prediction"], name=task, unit=unit
+        )
+        directory.mkdir(parents=True, exist_ok=True)
+        figure.savefig(directory / "predictions.png", dpi=150)
+        plt.close(figure)
+        (directory / "metrics.json").write_text(
+            json.dumps({"task": task, "unit": unit, **scores}, indent=2, allow_nan=False) + "\n"
+        )
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    output.to_csv(args.output, index=False)
+
+
 class ModelData:
     """Class to keep data together."""
 
-    def __init__(self, psms_df, features1, features2=pd.DataFrame(), le=None):
+    def __init__(
+        self, psms_df, features1, features2=pd.DataFrame(), le=None, numeric_features=None
+    ):
         """
         Class to keep the model data at a single place.
 
@@ -32,6 +314,9 @@ class ModelData:
         self.psms = psms_df
         self.features1 = features1
         self.features2 = features2
+        self.numeric_features = (
+            pd.DataFrame(index=psms_df.index) if numeric_features is None else numeric_features
+        )
         self.le: LabelEncoder = le
         self.train_idx = []
         self.predict_idx = []
@@ -214,6 +499,9 @@ class ModelData:
                     self.features1.filter(regex="rnn|esm").loc[idx],
                     self.features2.filter(regex="rnn|esm").loc[idx],
                 )
+            if self.numeric_features.shape[1]:
+                branches = xfeatures if isinstance(xfeatures, tuple) else (xfeatures,)
+                xfeatures = (*branches, self.numeric_features.loc[idx])
         return xfeatures
 
     def get_classes(self, idx, frac_cols, cont_cols):
@@ -292,45 +580,12 @@ class ModelData:
         if len(suf) > 0:
             suf = "-" + suf
 
-        # make sure list is iterable per task
-        if len(xirtnetwork.tasks) == 1:
-            predictions = [predictions]
-
-        # store cv value, only needed once
+        formatted = prediction_frame(
+            xirtnetwork, predictions, index=store_idx, original_units=False
+        )
         self.prediction_df.loc[store_idx, "cv"] = cv
-
-        for task_i, pred_ar in zip(xirtnetwork.tasks, predictions):
-            # get activation type because linear, sigmoid, softmax all require different encoding/
-            pred_type = xirtnetwork.output_p[f"{task_i}-activation"]
-
-            # only init once
-            if f"{task_i}-prediction{suf}" not in self.prediction_df.columns:
-                self.prediction_df[f"{task_i}-prediction{suf}"] = np.nan
-
-                # softmax also gets probabilities
-                if pred_type == "softmax":
-                    self.prediction_df[f"{task_i}-probability{suf}"] = np.nan
-
-            if pred_type in ["linear", "relu"]:
-                # easiest, just ravel to 1d ar
-                self.prediction_df.loc[store_idx, f"{task_i}-prediction{suf}"] = np.ravel(pred_ar)
-
-            elif pred_type == "softmax":
-                # classification, take maximum probability as class value
-                self.prediction_df.loc[store_idx, f"{task_i}-prediction{suf}"] = np.argmax(
-                    pred_ar, axis=1
-                )
-                self.prediction_df.loc[store_idx, f"{task_i}-probability{suf}"] = np.max(
-                    pred_ar, axis=1
-                )
-
-            elif pred_type == "sigmoid":
-                self.prediction_df.loc[store_idx, f"{task_i}-prediction{suf}"] = sigmoid_to_class(
-                    pred_ar
-                )
-
-            else:
-                raise ValueError(f"{pred_type} not supported, only linear/softmax/sigmoid")
+        for column in formatted:
+            self.prediction_df.loc[store_idx, column + suf] = formatted[column]
 
 
 def compute_accuracy(predictions, expected, tasks, params):
@@ -394,6 +649,7 @@ def preprocess(
     column_names=const.default_column_names,
     le=None,
     fraction_levels=None,
+    numeric_columns=None,
 ):
     """Prepare peptide identifications to be used with xiRT.
 
@@ -492,4 +748,13 @@ def preprocess(
         xp.fraction_encoding(matches_df, rt_methods=fraction_cols, levels=fraction_levels)
 
     # keep all data together in a data class
-    return ModelData(matches_df, features_rnn_seq1, features_rnn_seq2, le=le)
+    missing = set(numeric_columns or []) - set(matches_df.columns)
+    if missing:
+        raise ValueError(f"Missing configured numeric feature columns: {sorted(missing)}")
+    return ModelData(
+        matches_df,
+        features_rnn_seq1,
+        features_rnn_seq2,
+        le=le,
+        numeric_features=matches_df[numeric_columns or []],
+    )

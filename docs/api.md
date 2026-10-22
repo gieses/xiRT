@@ -47,6 +47,12 @@ extension. Direct `forward` is for tensor-based PyTorch usage.
 
 ## Network and checkpoints
 
+::: xirt.predictor.Predictor
+
+::: xirt.predictor.PeptideInputs
+
+::: xirt.predictor.prediction_frame
+
 ::: xirt.xirtnet.xiRTNET
 
 ::: xirt.xirtnet.RetentionModel
@@ -92,3 +98,38 @@ limitations, local weights, and cache semantics.
 ## Local experiment tracking
 
 ::: xirt.tracking.TrainingRun
+
+## FAIMS compensation voltage
+
+These APIs predict compensation voltage in volts, **not CCS**. See the
+[FAIMS guide](faims.md) for inputs, grouping, units and coverage limitations.
+
+::: xirt.faims.FAIMSPredictor
+
+::: xirt.faims.prepare_faims_observations
+
+::: xirt.faims.split_precursors
+
+::: xirt.faims.default_faims_params
+
+::: xirt.faims.cv_metrics
+
+::: xirt.faims.precursor_descriptors
+
+## Explanations and shared QC
+
+See [prediction explanations](explanations.md) for baselines and limitations.
+
+::: xirt.explain.Explanation
+
+::: xirt.explain.integrated_gradients
+
+::: xirt.qc.prediction_metrics
+
+::: xirt.qc.prediction_qc
+
+::: xirt.qc.plot_predictions
+
+::: xirt.qc.plot_learning_curve
+
+::: xirt.qc.plot_residue_attributions

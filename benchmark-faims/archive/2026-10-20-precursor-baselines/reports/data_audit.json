@@ -1,0 +1,58 @@
+[
+  {
+    "source": "4pm",
+    "raw_observations": 9179,
+    "retained_observations": 9100,
+    "removed_observations": 79,
+    "precursors": 3863,
+    "unmodified_pair_groups": 1214,
+    "ambiguous_precursors": 1841,
+    "maximum_fdr": 0.01,
+    "target": "CSM-weighted mean observed compensation voltage",
+    "units": "V",
+    "cv_min_v": -110.0,
+    "cv_max_v": -20.0
+  },
+  {
+    "source": "8pm",
+    "raw_observations": 3254,
+    "retained_observations": 3224,
+    "removed_observations": 30,
+    "precursors": 1027,
+    "unmodified_pair_groups": 426,
+    "ambiguous_precursors": 367,
+    "maximum_fdr": 0.01,
+    "target": "CSM-weighted mean observed compensation voltage",
+    "units": "V",
+    "cv_min_v": -85.0,
+    "cv_max_v": -20.0
+  },
+  {
+    "source": "26s",
+    "raw_observations": 10843,
+    "retained_observations": 10759,
+    "removed_observations": 84,
+    "precursors": 2827,
+    "unmodified_pair_groups": 1293,
+    "ambiguous_precursors": 1731,
+    "maximum_fdr": 0.01,
+    "target": "CSM-weighted mean observed compensation voltage",
+    "units": "V",
+    "cv_min_v": -85.0,
+    "cv_max_v": -30.0
+  },
+  {
+    "source": "293t",
+    "raw_observations": 1149,
+    "retained_observations": 1135,
+    "removed_observations": 14,
+    "precursors": 465,
+    "unmodified_pair_groups": 343,
+    "ambiguous_precursors": 253,
+    "maximum_fdr": 0.01,
+    "target": "CSM-weighted mean observed compensation voltage",
+    "units": "V",
+    "cv_min_v": -85.0,
+    "cv_max_v": -30.0
+  }
+]

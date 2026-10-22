@@ -7,7 +7,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import yaml
-from sklearn.metrics import mean_absolute_error, r2_score, root_mean_squared_error
+
+from xirt.qc import prediction_metrics as regression_metrics
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA_PATH = ROOT / "examples/data/crosslinks.csv"
@@ -88,10 +89,11 @@ def partition(features: list[np.ndarray], mask: np.ndarray) -> list[np.ndarray]:
 
 def prediction_metrics(observed: np.ndarray, predicted: np.ndarray) -> dict[str, float]:
     """Score aligned predictions in the original RT units."""
+    metrics = regression_metrics(observed, predicted)
     return {
-        "rmse_seconds": float(root_mean_squared_error(observed, predicted)),
-        "mae_seconds": float(mean_absolute_error(observed, predicted)),
-        "r2": float(r2_score(observed, predicted)),
+        "rmse_seconds": metrics["rmse"],
+        "mae_seconds": metrics["mae"],
+        "r2": metrics["r2"],
     }
 
 

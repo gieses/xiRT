@@ -13,6 +13,7 @@ import pandas as pd
 import seaborn as sns
 from matplotlib import ticker
 from matplotlib.lines import Line2D
+from scipy.stats import pearsonr, spearmanr
 from sklearn.metrics import (
     accuracy_score,
     classification_report,
@@ -35,6 +36,184 @@ TOTAL_color = palettable.cartocolors.qualitative.Bold_6.mpl_colors[1:3][1]
 new_rc_params = {"text.usetex": False, "svg.fonttype": "none"}
 mpl.rcParams.update(new_rc_params)
 logger = logging.getLogger(__name__)
+
+
+def prediction_metrics(observed, predicted):
+    """Return regression errors and correlations, with undefined scores as None.
+
+    Values must be aligned, finite and in the same units. Predictive R² is
+    distinct from Pearson r squared; a constant prediction has undefined r.
+    """
+    actual, estimate = np.asarray(observed, dtype=float), np.asarray(predicted, dtype=float)
+    if (
+        actual.ndim != 1
+        or actual.shape != estimate.shape
+        or not actual.size
+        or not np.isfinite(actual).all()
+        or not np.isfinite(estimate).all()
+    ):
+        raise ValueError("Metrics require aligned, nonempty finite one-dimensional arrays.")
+    residual = estimate - actual
+    total = float(np.square(actual - actual.mean()).sum())
+    varied = len(actual) > 1 and np.ptp(actual) > 0
+    correlated = varied and np.ptp(estimate) > 0
+    return {
+        "n": len(actual),
+        "rmse": float(np.sqrt(np.mean(residual**2))),
+        "mae": float(np.mean(np.abs(residual))),
+        "r2": 1 - float(np.square(residual).sum()) / total if varied else None,
+        "pearson_r": float(pearsonr(actual, estimate).statistic) if correlated else None,
+        "spearman_rho": float(spearmanr(actual, estimate).statistic) if correlated else None,
+    }
+
+
+def plot_predictions(observed, predicted, *, name="Retention time", unit="", ax=None, color=None):
+    """Plot observed/predicted values with identity line and annotated correlations."""
+    metrics = prediction_metrics(observed, predicted)
+    if ax is None:
+        _, ax = plt.subplots(figsize=(5, 4.5), layout="constrained")
+    values = np.concatenate((np.asarray(observed), np.asarray(predicted)))
+    low, high = float(values.min()), float(values.max())
+    margin = max((high - low) * 0.06, abs(high) * 0.01, 0.1)
+    limits = (low - margin, high + margin)
+    ax.scatter(
+        observed,
+        predicted,
+        s=20,
+        alpha=0.6,
+        linewidths=0,
+        color=color or "#287b8e",
+        rasterized=True,
+    )
+    ax.plot(limits, limits, "--", color="#54616a", linewidth=1, zorder=0)
+    suffix = f" ({unit})" if unit else ""
+    ax.set(
+        title=name,
+        xlabel=f"Observed{suffix}",
+        ylabel=f"Predicted{suffix}",
+        xlim=limits,
+        ylim=limits,
+    )
+    labels = [("pearson_r", "Pearson r"), ("spearman_rho", "Spearman rho"), ("r2", "R²")]
+    annotation = "\n".join(
+        f"{label} = {metrics[key]:.3f}" if metrics[key] is not None else f"{label} undefined"
+        for key, label in labels
+    )
+    annotation += f"\nRMSE = {metrics['rmse']:.2f} {unit}\nn = {metrics['n']}"
+    ax.text(
+        0.04,
+        0.96,
+        annotation,
+        transform=ax.transAxes,
+        va="top",
+        fontsize=9,
+        bbox={"boxstyle": "round,pad=0.4", "facecolor": "white", "edgecolor": "0.85", "alpha": 0.9},
+    )
+    ax.spines[["top", "right"]].set_visible(False)
+    return ax
+
+
+def prediction_qc(observed, predicted, *, name="Retention time", unit=""):
+    """Create the same annotated prediction/residual QC figure for RT and FAIMS."""
+    figure, axes = plt.subplots(1, 2, figsize=(10, 4.5), layout="constrained")
+    plot_predictions(observed, predicted, name=name, unit=unit, ax=axes[0])
+    axes[1].scatter(
+        observed,
+        np.asarray(predicted) - np.asarray(observed),
+        s=20,
+        alpha=0.6,
+        color="#287b8e",
+        linewidths=0,
+        rasterized=True,
+    )
+    axes[1].axhline(0, linestyle="--", color="#54616a", linewidth=1)
+    suffix = f" ({unit})" if unit else ""
+    axes[1].set(
+        title="Residuals", xlabel=f"Observed{suffix}", ylabel=f"Predicted − observed{suffix}"
+    )
+    axes[1].spines[["top", "right"]].set_visible(False)
+    return figure
+
+
+def plot_learning_curve(history, *, scale=1.0, unit=""):
+    """Plot training and validation RMSE from scalar standardized MSE histories."""
+    data = pd.DataFrame(history)
+    if not {"loss", "val_loss"} <= set(data) or data.empty:
+        raise ValueError("Learning curves require nonempty loss and val_loss histories.")
+    figure, axis = plt.subplots(figsize=(6, 3.5), layout="constrained")
+    for column, label, color in (
+        ("loss", "Training", "#287b8e"),
+        ("val_loss", "Validation", "#d67b30"),
+    ):
+        axis.plot(
+            np.arange(1, len(data) + 1), np.sqrt(data[column]) * scale, label=label, color=color
+        )
+    axis.set(xlabel="Epoch", ylabel=f"RMSE ({unit})" if unit else "RMSE")
+    axis.spines[["top", "right"]].set_visible(False)
+    axis.legend(frameon=False)
+    return figure
+
+
+def plot_residue_attributions(explanation, *, sample=0):
+    """Plot signed residue and precursor contributions in the prediction's units.
+
+    Positive contributions raise the prediction relative to the explanation
+    baseline; they are model attributions, not causal chemical effects.
+    """
+    residues = explanation.residues.loc[explanation.residues["sample"] == sample]
+    numeric = explanation.numeric.loc[explanation.numeric["sample"] == sample]
+    if residues.empty:
+        raise ValueError(f"No explained residues for sample {sample}.")
+    branches = sorted(residues["peptide"].unique())
+    figure, axes = plt.subplots(
+        len(branches) + bool(len(numeric)),
+        1,
+        figsize=(
+            max(8, residues.groupby("peptide").size().max() * 0.26),
+            2.5 * (len(branches) + bool(len(numeric))),
+        ),
+        squeeze=False,
+        layout="constrained",
+    )
+    for axis, branch in zip(axes[:, 0], branches):
+        part = residues.loc[(residues["peptide"] == branch) & (residues["kind"] == "residue")]
+        values = part["attribution"]
+        axis.bar(
+            part["position"],
+            values,
+            color=np.where(values >= 0, "#c95a4a", "#327f9e"),
+            width=0.8,
+        )
+        axis.axhline(0, color="0.6", linewidth=0.7)
+        axis.set(
+            title=f"Peptide {branch}",
+            ylabel=f"Contribution ({explanation.unit})",
+            xticks=part["position"],
+            xticklabels=part["token"],
+        )
+        for tick, marked in zip(axis.get_xticklabels(), part["crosslinked"]):
+            if marked:
+                tick.set_fontweight("bold")
+        axis.spines[["top", "right"]].set_visible(False)
+    if len(numeric):
+        axis = axes[-1, 0]
+        axis.bar(
+            numeric["feature"],
+            numeric["attribution"],
+            color=np.where(numeric["attribution"] >= 0, "#c95a4a", "#327f9e"),
+        )
+        axis.axhline(0, color="0.6", linewidth=0.7)
+        axis.set(title="Precursor context", ylabel=f"Contribution ({explanation.unit})")
+        axis.spines[["top", "right"]].set_visible(False)
+    summary = explanation.summary.iloc[sample]
+    termini = residues.loc[residues["kind"] == "terminus", "attribution"].sum()
+    figure.suptitle(
+        f"{explanation.task}: prediction {summary['prediction']:.2f} {explanation.unit} | "
+        f"baseline {summary['baseline_prediction']:.2f}\n"
+        f"Termini {termini:+.2f} | completeness error {summary['completeness_error']:+.3g}",
+        fontsize=10,
+    )
+    return figure
 
 
 def encode_pval(pvalue):
@@ -148,22 +327,7 @@ def add_scatter(y, yhat, task, ax, color):  # pragma: no cover
     Returns:
         axes, matplotlib axes object
     """
-    # get min, max for plotting
-    xmin, xmax = np.hstack([y, yhat]).min(), np.hstack([y, yhat]).max()
-    xmin = xmin - 0.1 * xmin
-    xmax = xmax + 0.1 * xmax
-    metric_str = f"""r2: {custom_r2(y, yhat):.2f} """
-    metric_str = f"""r2: {custom_r2(y, yhat):.2f} """
-    logger.info(f"QC: {task}")
-    logger.info(f"Metrics: {metric_str}")
-    ax.scatter(y, yhat, facecolor="none", edgecolor=color)
-    ax.set(
-        title=metric_str,
-        xlabel=f"Observed {task.upper()}",
-        ylabel=f"Predicted {task}",
-        xlim=(xmin, xmax),
-        ylim=(xmin, xmax),
-    )
+    ax = plot_predictions(y, yhat, name=task.upper(), ax=ax, color=color)
     ax.yaxis.set_major_locator(ticker.MaxNLocator(5))
     sns.despine()
     return ax
@@ -491,10 +655,7 @@ def plot_cv_predictions(
         ntasks = len(fracs) + len(cont)
 
         f, axes = plt.subplots(1, ntasks, figsize=(4 * ntasks, 4))
-        if ntasks == 1:
-            axes = [axes]
-        if type(axes) is matplotlib.axes._axes.Axes:
-            axes = [axes]
+        axes = np.atleast_1d(axes)
 
         idx = 0
         # plot heatmap variant for variant for fraction prediction

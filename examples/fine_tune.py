@@ -104,8 +104,10 @@ def base_training(
     validation_mask,
     xiRTNET,
 ):
+    params = network_params()
+    params["_preprocessing"] = metadata
     base = xiRTNET(
-        network_params(),
+        params,
         input_dim=metadata["sequence_width"],
         embedding_dim=len(metadata["vocabulary"]) + 1,
     )
@@ -238,6 +240,8 @@ def parameter_plot(output, summary):
 
 @app.cell
 def result_plots(base_history, mo, output, pd, plt, summary):
+    from xirt.qc import plot_predictions
+
     rmse_figure, rmse_axis = plt.subplots(figsize=(8, 3))
     rmse_axis.barh(summary["strategy"], summary["test_rmse_seconds"])
     rmse_axis.axvline(
@@ -266,12 +270,14 @@ def result_plots(base_history, mo, output, pd, plt, summary):
     for axis, (_strategy, values) in zip(
         prediction_axes.flat, strategy_predictions.items(), strict=True
     ):
-        axis.scatter(values["observed_seconds"], values["predicted_seconds"], alpha=0.6, s=18)
-        axis.plot(limits, limits, "--", color="grey")
+        plot_predictions(
+            values["observed_seconds"],
+            values["predicted_seconds"],
+            name=_strategy,
+            unit="s",
+            ax=axis,
+        )
         axis.set(
-            title=_strategy,
-            xlabel="Observed RP (seconds)",
-            ylabel="Predicted RP (seconds)",
             xlim=limits,
             ylim=limits,
         )

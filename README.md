@@ -61,10 +61,30 @@ uv run --no-sync marimo edit examples/train_predict.py --host 127.0.0.1
 uv run --no-sync marimo edit examples/fine_tune.py --host 127.0.0.1
 ```
 
-`make examples` executes both without a notebook server. Training uses up to
+`make examples` executes these plus the FAIMS and interpretation examples without a notebook server. Training uses up to
 150 epochs with validation-based early stopping. The
 [fine-tuning guide](https://gieses.github.io/xiRT/fine-tuning/) covers checkpoint compatibility, the
 Python API, and YAML settings.
+
+## Crosslink FAIMS prediction
+
+The source checkout also includes `xirt faims train` and shared `xirt predict`
+for charge-aware **FAIMS compensation voltage (V), not collision cross section**.
+`examples/faims.py` trains and evaluates a charge-aware model on bundled data.
+`examples/analyze_predictions.py` compares RT and FAIMS predictions with annotated
+correlations and explains residue, crosslink-site and precursor contributions.
+Neither requires data downloads.
+
+```bash
+make notebook-faims
+make notebook-analysis
+```
+
+`xirt predict` and `xirt explain` accept RT and FAIMS checkpoints through the same
+interface. See the [FAIMS guide](https://gieses.github.io/xiRT/faims/) and
+`benchmark-faims/README.md` for the sequence-only / charge / charge+m/z comparison,
+pinned inputs and reproduction commands. The earlier precursor/baseline experiment
+and its source snapshot are preserved under `benchmark-faims/archive/`.
 
 ## Results and compatibility
 

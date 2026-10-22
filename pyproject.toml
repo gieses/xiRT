@@ -139,7 +139,7 @@ select = ["E4", "E7", "E9", "F", "I", "UP"]
 [tool.mypy]
 python_version = "3.12"
 files = ["xirt/xirtnet.py", "xirt/embeddings.py", "xirt/training.py", "xirt/config.py",
-         "xirt/adapters.py", "xirt/tracking.py"]
+         "xirt/adapters.py", "xirt/tracking.py", "xirt/faims.py", "xirt/explain.py"]
 ignore_missing_imports = true
 follow_imports = "silent"
 check_untyped_defs = true
