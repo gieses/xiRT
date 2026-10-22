@@ -1,0 +1,65 @@
+# Full-cohort crosslink regression; SCX/hSAX outputs are fraction indices, not seconds.
+source:
+  record: 4720760
+  license: CC-BY-4.0
+  archive: ecoli.zip
+  member: ecoli/DSS_CSM_anpxirt.csv
+  sha256: 3833575aa3ec45d55b1c3f3af2556b97314b26dc5d1880301c18514a0295b72f
+  member_crc32: 1470239631
+  archive_published_md5: 9e9a1a2db3200f19e87e3c12f7d89e81
+split:
+  seed: 42
+  fractions: [0.8, 0.1, 0.1]
+  group: unordered unmodified peptide pair, across PTMs and link sites
+sequence_width: 128
+network:
+  LSTM:
+    activation: tanh
+    activity_regularization: l2
+    activityregularizer_value: 0.0
+    bidirectional: true
+    kernel_regularization: l2
+    kernelregularizer_value: 0.0
+    lstm_bn: false
+    nlayers: 2
+    type: GRU
+    units: 64
+  dense:
+    activation: [relu, relu]
+    dense_bn: [false, false]
+    dropout: [0.1, 0.1]
+    kernel_regularizer: [l2, l2]
+    regularization: [false, false]
+    regularizer_value: [0.0, 0.0]
+    neurons: [128, 64]
+    nlayers: 2
+  embedding:
+    length: 32
+  learning:
+    batch_size: 256
+    epochs: 300
+    learningrate: 0.001
+    optimizer: adamw
+    weight_decay: 0.01
+    clip_norm: 5.0
+    device: cpu
+    seed: 42
+    deterministic: true
+  siamese:
+    use: true
+    merge_type: add
+    single_predictions: false
+  callbacks:
+    check_point: false
+    log_csv: false
+    early_stopping: true
+    early_stopping_patience: 35
+    tensor_board: false
+    progressbar: true
+    reduce_lr: true
+    reduce_lr_factor: 0.5
+    reduce_lr_patience: 8
+  encoder:
+    route: recurrent
+  tracking:
+    enabled: false
