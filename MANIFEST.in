@@ -1,6 +1,7 @@
 include README.md CHANGELOG.md LICENCE pyproject.toml uv.lock mkdocs.yml
 recursive-include docs *.md *.yaml *.json *.png *.svg *.css
 recursive-include examples *.py *.md *.csv *.json *.yaml
+include xirt/assets/rp.pt xirt/assets/scx.pt xirt/assets/hsax.pt xirt/assets/multitask.pt xirt/assets/faims.pt xirt/assets/manifest.json
 prune examples/results
 prune examples/__marimo__
 recursive-include xirt/data_pipelines/benchmarks *.py

@@ -200,12 +200,14 @@ attribution was respectively 1.231 s, 0.00319 fractions, 0.00650 fractions and
 
 ## Reproduce without adding data to Git
 
-The source table, split membership, row-level predictions and weights remain in
-ignored local directories. This page commits only figures and aggregate/model
-provenance. See the [model cards](chromatography-models.md) for the exact training
-configuration, local checkpoint sizes and distribution status.
+The five selected checkpoints are bundled in `xirt/assets/`; prediction and
+explanation need no training or model download. The source table, split
+membership and row-level predictions remain in ignored local directories.
+See the [model cards](chromatography-models.md) for the exact training
+configuration, measured checkpoint sizes and provenance.
 
-From a source checkout:
+To retrain the chromatography models and reproduce the full held-out gallery
+from a source checkout (rather than merely predict a new input):
 
 ```bash
 # Retrieve only the named table, not the multi-gigabyte supporting archive.
@@ -216,8 +218,10 @@ uv run --no-sync python -m xirt.data_pipelines.benchmarks.datasets.sources \
 CUBLAS_WORKSPACE_CONFIG=:4096:8 uv run --no-sync python -m examples.train_chromatography \
   --device cuda:0
 
-# Reuse the existing FAIMS benchmark checkpoint; this never trains or downloads.
-uv run --no-sync python -m examples.generate_prediction_gallery
+# Gallery evaluation also needs the local FAIMS precursor/split table.
+# Reuse the bundled FAIMS weights; this command never trains or downloads.
+uv run --no-sync python -m examples.generate_prediction_gallery \
+  --faims-checkpoint xirt/assets/faims.pt
 ```
 
 The training command verifies the pinned CSV's SHA-256 before fitting and saves
@@ -229,7 +233,7 @@ import pandas as pd
 from xirt.predictor import Predictor
 from xirt.qc import plot_residue_attributions
 
-predictor = Predictor.load("local-data/chromatography-models/multitask/model.pt")
+predictor = Predictor.load()
 precursors = pd.DataFrame({
     "Peptide1": ["KSGVLTGLPDAYGR"],
     "Peptide2": ["LKMQVGPK"],

@@ -72,6 +72,9 @@ exclude = ["tests*", "benchmark*", "documentation*", "xirt.data_pipelines.benchm
 [tool.setuptools]
 include-package-data = false
 
+[tool.setuptools.package-data]
+xirt = ["assets/rp.pt", "assets/scx.pt", "assets/hsax.pt", "assets/multitask.pt", "assets/faims.pt", "assets/manifest.json"]
+
 [tool.uv]
 conflicts = [[{extra = "cpu"}, {extra = "cuda"}]]
 

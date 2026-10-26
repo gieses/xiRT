@@ -2,18 +2,24 @@
 
 These four native PyTorch checkpoints support the
 [illustrated prediction walkthrough](prediction-gallery.md). They are trained
-models, not two-epoch demo weights. **The checkpoints remain local: no weights
-or training data are included in this PR, Git history or package distributions.**
-Distribution is pending review of their measured sizes and model cards.
+models, not two-epoch demo weights. **The four checkpoints and the selected FAIMS
+checkpoint are bundled in `xirt/assets/`, in Git, wheels and source distributions.**
+Training tables, split membership and row-level predictions are not distributed.
 
 ## Models and intended use
 
-| Local checkpoint | Outputs | Trainable parameters |
+| Bundled checkpoint | Outputs | Trainable parameters |
 | --- | --- | ---: |
-| `local-data/chromatography-models/rp/model.pt` | RP, seconds | 138,113 |
-| `local-data/chromatography-models/scx/model.pt` | SCX, fraction index | 138,113 |
-| `local-data/chromatography-models/hsax/model.pt` | hSAX, fraction index | 138,113 |
-| `local-data/chromatography-models/multitask/model.pt` | RP + SCX + hSAX | 187,779 |
+| `xirt/assets/rp.pt` | RP, seconds | 138,113 |
+| `xirt/assets/scx.pt` | SCX, fraction index | 138,113 |
+| `xirt/assets/hsax.pt` | hSAX, fraction index | 138,113 |
+| `xirt/assets/multitask.pt` | RP + SCX + hSAX | 187,779 |
+
+`Predictor.load()` defaults to `multitask`. Select the others with
+`Predictor.load(model="rp")`, `"scx"` or `"hsax"`. The additional
+`xirt/assets/faims.pt` is the pooled 4PM/8PM, seed-42 charge/m/z model:
+load it with `Predictor.load(model="faims")` or `FAIMSPredictor.load()`.
+It uses the separate [FAIMS input schema and target](faims.md).
 
 Use these models to investigate predictions for crosslinked peptides under the
 source study's separation protocol and to reproduce the explanation examples.
@@ -33,9 +39,8 @@ single-versus-joint comparison is not capacity-matched and uses one initializati
   [Zenodo record 4720760](https://zenodo.org/records/4720760), version 1.0.0;
   related article DOI [10.1038/s41467-021-23441-0](https://doi.org/10.1038/s41467-021-23441-0).
 - **Table:** `ecoli.zip` → `ecoli/DSS_CSM_anpxirt.csv`.
-- **Data license:** CC-BY-4.0 as recorded in the Zenodo metadata. Code is
-  Apache-2.0. The checkpoints have not been published as licensed model assets;
-  publication should include an explicit model-license decision and attribution.
+- **Data license:** CC-BY-4.0 as recorded in the Zenodo metadata. The project
+  license is Apache-2.0; the source-data license and attribution remain separate.
 - **CSV SHA-256:** `3833575aa3ec45d55b1c3f3af2556b97314b26dc5d1880301c18514a0295b72f`.
 - **Integrity:** the retrieved member's size/CRC was checked against the archive
   catalogue; CRC32 is `1470239631`. The published whole-ZIP MD5 is recorded,
@@ -114,7 +119,7 @@ new crosslinkers and changed chromatographic protocols remain unsupported
 generalization cases. Residue explanations describe the fitted model and its
 declared baseline, not causal chemistry.
 
-## Checkpoint format and future distribution
+## Checkpoint format and packaged defaults
 
 Checkpoints contain native model weights and primitive preprocessing metadata,
 **not optimizer states or raw observations**. Loading is the same for separate
@@ -123,7 +128,7 @@ and joint models:
 ```python
 from xirt.predictor import Predictor
 
-model = Predictor.load("local-data/chromatography-models/multitask/model.pt")
+model = Predictor.load()  # Bundled joint model.
 prediction = model.predict(precursors)
 explanation = model.explain(precursors.iloc[:1], task="hsax", steps=256)
 ```
@@ -145,15 +150,23 @@ estimates from parameter counts. The reused FAIMS checkpoint is a separate
 **49,621-byte** file; it is not included in the four-model totals or bundle.
 `local-data/chromatography-models/sizes.json` records the measured counts, and
 the [gallery manifest](assets/prediction-gallery/manifest.json) preserves them
-alongside all checkpoint SHA-256 hashes.
+alongside all checkpoint SHA-256 hashes. All five packaged checkpoints together
+are **2,493,915 bytes (2.378 MiB)**.
 
 `chromatography-models.tar.gz` is prepared **locally only** with the four models,
 their records/metrics and the frozen training manifest. The download/source
 table, partitions and row-level predictions are not included in the bundle.
 
-Before any future upload, review the measured sizes, licensing, scope and
-evaluation above. A release-asset distribution can keep weights out of Git and
-package wheels. A published bundle should include these model cards, SHA-256
-checksums and versioned training provenance; consumers should verify checksums
-and load checkpoints only from a trusted source. There is no public model
-download URL until that publication is explicitly approved.
+The copies in `xirt/assets/` are byte-identical to these final training outputs.
+Their filenames, exact sizes, SHA-256 hashes and source attribution are recorded
+in the packaged `xirt/assets/manifest.json`; detailed training/evaluation
+provenance remains in the gallery manifest. No separate model download or
+release bundle is needed for inference.
+
+`importlib.resources.files()` locates the bundled resources and `as_file()`
+keeps extracted resources alive until loading finishes, including ZIP imports.
+The working directory does not affect model resolution. Custom paths are still
+supported with `Predictor.load("my_model.pt")`; they cannot be combined with a
+named bundled model. Loading does not train or download anything, and fails
+explicitly for an unknown model or missing checkpoint. Load custom weights
+only from a trusted source.

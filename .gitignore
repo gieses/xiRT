@@ -52,6 +52,11 @@ embedding-cache/
 *.hdf5
 *.npy
 *.npz
+!xirt/assets/rp.pt
+!xirt/assets/scx.pt
+!xirt/assets/hsax.pt
+!xirt/assets/multitask.pt
+!xirt/assets/faims.pt
 
 # Unpublished data and historical local working directories
 /data/
