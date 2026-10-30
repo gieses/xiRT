@@ -45,6 +45,42 @@ For a locked source installation, clone this repository and run
 `uv run --no-sync`. See [installation and CLI](https://gieses.github.io/xiRT/getting-started/) for
 backend selection and optional tracking, TensorBoard, Lion, and ESM-C extras.
 
+## Python API: use xiRT in your own code
+
+The package includes trained models, so inference needs no training or model
+download. This mock crosslink table uses **one-based link positions**:
+
+```python
+import pandas as pd
+
+from xirt.predictor import Predictor
+
+peptides = pd.DataFrame({
+    "Peptide1": ["PEPTIDEK", "AKLVK"],
+    "Peptide2": ["AAKPEPTIDER", "MPEPTIDEK"],
+    "LinkPos1": [8, 2],
+    "LinkPos2": [3, 9],
+})
+
+predictor = Predictor.load()  # Bundled joint RP/SCX/hSAX model; CPU by default.
+predictions = predictor.predict(peptides)
+print(predictions[["rp-prediction", "scx-prediction", "hsax-prediction"]])
+
+explanation = predictor.explain(peptides.iloc[:1], task="rp", steps=256)
+print(explanation.residues[["peptide", "position", "token", "attribution"]])
+```
+
+RP predictions and contributions are in **seconds**; SCX/hSAX outputs are
+continuous **fraction indices**, not seconds or class probabilities. These
+invented inputs illustrate the API, not an accuracy evaluation. The models are
+specific to their training protocols, not universal chromatographic calibrators.
+
+Select separate weights with `Predictor.load(model="rp")`, `"scx"` or `"hsax"`;
+`model="faims"` selects the charge/m/z FAIMS model (different input schema).
+`Predictor.load("my_model.pt")` still loads your own checkpoint.
+See the [model cards](https://gieses.github.io/xiRT/chromatography-models/) and
+[prediction/explanation guide](https://gieses.github.io/xiRT/explanations/).
+
 ## Learn with real peptide data
 
 Two [CPU notebooks](https://gieses.github.io/xiRT/tutorials/) use 2,048 observed peptide pairs:

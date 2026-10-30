@@ -15,6 +15,7 @@ from sklearn.preprocessing import LabelEncoder
 from xirt import const, xirtnet
 from xirt import processing as xp
 from xirt import sequences as xs
+from xirt.assets import MODEL_NAMES, checkpoint_path
 
 logger = logging.getLogger("xirt").getChild(__name__)
 
@@ -68,8 +69,17 @@ class Predictor:
         self.faims = None
 
     @classmethod
-    def load(cls, location, *, device="cpu"):
-        """Load RT and FAIMS checkpoints through one public entry point."""
+    def load(cls, location=None, *, model=None, device="cpu"):
+        """Load a custom checkpoint or a bundled model (joint chromatography by default).
+
+        Use ``model="rp"``, ``"scx"``, ``"hsax"``, ``"multitask"`` or ``"faims"``
+        to select bundled weights. A custom ``location`` and ``model`` are exclusive.
+        """
+        if location is not None and model is not None:
+            raise ValueError("Use either a checkpoint location or a bundled model, not both.")
+        if location is None:
+            with checkpoint_path("multitask" if model is None else model) as path:
+                return cls.load(path, device=device)
         predictor = cls(xirtnet.RetentionModel.load(location, device=device))
         if "_faims" in predictor.model.params:
             from xirt.faims import FAIMSPredictor
@@ -205,7 +215,6 @@ def add_prediction_subcommands(subparsers):
     """Register checkpoint-driven commands shared by retention-time and FAIMS models."""
     predict = subparsers.add_parser("predict", help="Predict RT or FAIMS from a saved checkpoint.")
     predict.add_argument("--input", required=True, type=Path)
-    predict.add_argument("--checkpoint", required=True, type=Path)
     predict.add_argument("--output", required=True, type=Path)
     predict.add_argument(
         "--qc", type=Path, help="QC directory; requires an observed target column."
@@ -214,11 +223,20 @@ def add_prediction_subcommands(subparsers):
     predict.add_argument("--task", help="Continuous task to use for optional QC.")
     explain = subparsers.add_parser("explain", help="Explain RT or FAIMS at residue level.")
     explain.add_argument("--input", required=True, type=Path)
-    explain.add_argument("--checkpoint", required=True, type=Path)
     explain.add_argument("--output", required=True, type=Path)
     explain.add_argument("--task", help="Continuous task; required for multi-task models.")
     explain.add_argument("--steps", type=int, default=64)
     explain.add_argument("--limit", type=int, help="Explain only the first N input rows.")
+    for parser in (predict, explain):
+        source = parser.add_mutually_exclusive_group()
+        source.add_argument(
+            "--checkpoint", type=Path, help="Custom checkpoint instead of bundled weights."
+        )
+        source.add_argument(
+            "--model",
+            choices=MODEL_NAMES,
+            help="Bundled model (default: multitask, predicting RP/SCX/hSAX).",
+        )
 
 
 def run_prediction_command(args):
@@ -229,7 +247,7 @@ def run_prediction_command(args):
 
     from xirt import qc
 
-    predictor = Predictor.load(args.checkpoint)
+    predictor = Predictor.load(args.checkpoint, model=getattr(args, "model", None))
     frame = pd.read_csv(args.input)
     if getattr(args, "command", None) == "explain":
         if args.limit is not None:

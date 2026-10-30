@@ -58,11 +58,16 @@ def test_charge_comparison_inventory_features_and_training_controls():
         == hashlib.sha256((BENCHMARK / "protocol.json").read_bytes()).hexdigest()
     )
     with tarfile.open(REPORTS / "source.tar.gz") as source:
+        assert {member.name for member in source.getmembers() if member.isfile()} == set(
+            manifest["source_sha256"]
+        )
         for relative, expected in manifest["source_sha256"].items():
             stream = source.extractfile(relative)
             assert stream is not None
             assert hashlib.sha256(stream.read()).hexdigest() == expected
-            assert hashlib.sha256((ROOT / relative).read_bytes()).hexdigest() == expected
+            # Historical runtime code is frozen in the snapshot, not in the evolving library.
+            if relative.startswith("xirt/data_pipelines/benchmarks/"):
+                assert hashlib.sha256((ROOT / relative).read_bytes()).hexdigest() == expected
     runs = pd.read_csv(REPORTS / "runs.csv")
     expected_runs = {
         (cohort, model, seed)

@@ -1,0 +1,56 @@
+{
+  "schema": "xirt-bundled-models-v1",
+  "default": "multitask",
+  "chromatography_source": {
+    "record": "https://zenodo.org/records/4720760",
+    "article_doi": "10.1038/s41467-021-23441-0",
+    "data_license": "CC-BY-4.0",
+    "table": "ecoli.zip/ecoli/DSS_CSM_anpxirt.csv",
+    "sha256": "3833575aa3ec45d55b1c3f3af2556b97314b26dc5d1880301c18514a0295b72f",
+    "eligible_csms": 11072,
+    "training_csms": 8924,
+    "validation_csms": 1093,
+    "test_csms": 1055,
+    "split": "unordered unmodified peptide pairs; seed 42",
+    "initialization_seed": 42
+  },
+  "faims_source": {
+    "cohort": "pooled original 4PM/8PM",
+    "variant": "sequence + precursor charge + precursor m/z",
+    "initialization_seed": 42,
+    "table_sha256": "3f6e852640f8c2c588e84670717fe83b2af8c9e7ad97a9e5163d74d5e112b05e",
+    "target": "mean observed compensation voltage in volts, not an intensity-calibrated optimum"
+  },
+  "models": {
+    "rp": {
+      "filename": "rp.pt",
+      "bytes": 560433,
+      "sha256": "785cfe2ba30c17b9d1f98f50964377a63298471236114c9efbb199f397efbccb",
+      "outputs": {"rp": "s"}
+    },
+    "scx": {
+      "filename": "scx.pt",
+      "bytes": 560433,
+      "sha256": "458084d1027680ce6576db80a3567a4e07d417ad25f4e5eecfdcf1c535f546fe",
+      "outputs": {"scx": "fraction"}
+    },
+    "hsax": {
+      "filename": "hsax.pt",
+      "bytes": 560433,
+      "sha256": "adfbbe291afa332aa2b35246bbe0443b8a280a9bf453cd91490f1c71e8b2b808",
+      "outputs": {"hsax": "fraction"}
+    },
+    "multitask": {
+      "filename": "multitask.pt",
+      "bytes": 762995,
+      "sha256": "e47ff853d3f94508b7d07b0e846ee17f31226b90712687aca0f0f9941329c4c5",
+      "outputs": {"rp": "s", "scx": "fraction", "hsax": "fraction"}
+    },
+    "faims": {
+      "filename": "faims.pt",
+      "bytes": 49621,
+      "sha256": "4143a0971e17e23a064ee938bc76bd48eb62edf3ce2f4d40a87170c9b169f9d4",
+      "outputs": {"faims_cv": "V"}
+    }
+  }
+}

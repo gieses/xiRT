@@ -474,8 +474,13 @@ class FAIMSPredictor:
         self.model.save(location)
 
     @classmethod
-    def load(cls, location: str | Path, *, device: str = "cpu") -> "FAIMSPredictor":
-        """Reconstruct a FAIMS checkpoint, rejecting RT-only checkpoints."""
+    def load(cls, location: str | Path | None = None, *, device: str = "cpu") -> "FAIMSPredictor":
+        """Load custom FAIMS weights or the bundled charge/m/z checkpoint by default."""
+        if location is None:
+            from xirt.assets import checkpoint_path
+
+            with checkpoint_path("faims") as path:
+                return cls.load(path, device=device)
         checkpoint = read_checkpoint(location)
         params = checkpoint["params"]
         metadata = params.get("_faims", {})
@@ -537,7 +542,11 @@ def add_faims_subcommands(subparsers: Any) -> None:
         "predict", help="Predict from sequences, sites and precursor fields."
     )
     predict.add_argument("--input", required=True, type=Path)
-    predict.add_argument("--checkpoint", required=True, type=Path)
+    predict.add_argument(
+        "--checkpoint",
+        type=Path,
+        help="Custom checkpoint (default: bundled FAIMS charge/m/z model).",
+    )
     predict.add_argument("--output", required=True, type=Path)
     predict.add_argument(
         "--qc", type=Path, help="QC output directory; requires observed target values."
@@ -550,6 +559,8 @@ def run_faims_command(args: argparse.Namespace) -> None:
     if args.faims_action == "predict":
         from xirt.predictor import run_prediction_command
 
+        if args.checkpoint is None:
+            args.model = "faims"
         run_prediction_command(args)
         return
     sources = [path.stem for path in args.input]

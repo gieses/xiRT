@@ -109,6 +109,55 @@ Use Python 3.12-3.14 in an isolated environment.
     checkpoint-based prediction, all four fine-tuning strategies and saved PNGs.
     Training uses validation-based early stopping.
 
+## Python API: use xiRT in your own code
+
+Use the bundled trained weights directly from Python: no training, configuration
+files or model downloads are needed. This mock crosslink table needs only peptide
+sequences and **one-based link positions**; observed labels and scores are absent.
+
+```python
+import pandas as pd
+
+from xirt.predictor import Predictor
+
+peptides = pd.DataFrame({
+    "Peptide1": ["PEPTIDEK", "AKLVK"],
+    "Peptide2": ["AAKPEPTIDER", "MPEPTIDEK"],
+    "LinkPos1": [8, 2],
+    "LinkPos2": [3, 9],
+})
+
+predictor = Predictor.load()  # Bundled joint RP/SCX/hSAX model; CPU by default.
+predictions = predictor.predict(peptides)
+print(predictions[["rp-prediction", "scx-prediction", "hsax-prediction"]])
+
+explanation = predictor.explain(peptides.iloc[:1], task="rp", steps=256)
+print(explanation.residues[["peptide", "position", "token", "attribution"]])
+```
+
+`predict` preserves row order and adds `rp-prediction` in **seconds**,
+`scx-prediction` and `hsax-prediction` in continuous **fraction-index units**,
+plus `unknown_token_count`. The explanation's signed contributions are also in
+seconds here; positive values raise the output relative to the declared baseline.
+These invented examples demonstrate the interface, not accuracy or causal chemistry.
+
+Choose a separate model with `Predictor.load(model="rp")`, `"scx"` or `"hsax"`.
+Use `Predictor.load(model="faims")` for the bundled charge/m/z FAIMS model and its
+[precursor input schema](faims.md), or `Predictor.load("my_model.pt")` for custom
+weights. `device="cuda:0"` requests CUDA when supported by your environment.
+
+The same defaults work from the CLI:
+
+```bash
+xirt predict --input crosslinks.csv --output predictions.csv
+xirt explain --input crosslinks.csv --output explanations --task rp --limit 1
+```
+
+These are source-study-specific models, not universal retention-time calibrators.
+Read the [model cards](chromatography-models.md), the
+[illustrated walkthrough](prediction-gallery.md), and the
+[prediction/explanation API guide](explanations.md) for evaluation, units and limits.
+
 <div class="xirt-evidence" markdown="1">
 <div markdown="1">
 

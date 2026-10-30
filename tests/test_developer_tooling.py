@@ -29,12 +29,29 @@ validate_contents = runpy.run_path(str(ROOT / ".github/scripts/validate_release.
         "benchmark-tf-torch/cohort/results/archive.json",
         "benchmarks/reference/legacy_tf.py",
         "xirt/model.pt",
+        "xirt/assets/extra.pt",
+        "xirt/assets/rp.h5",
         "examples/train_predict.py",
     ],
 )
 def test_production_wheel_rejects_benchmark_and_checkpoint_content(name):
     with pytest.raises(SystemExit, match="content in distribution"):
         validate_contents([name], "Name: xirt-torch\n", wheel=True)
+
+
+@pytest.mark.parametrize("wheel", [False, True])
+def test_distributions_allow_only_named_default_checkpoints(wheel):
+    from xirt.assets import MODEL_NAMES
+
+    names = [f"xirt/assets/{name}.pt" for name in MODEL_NAMES]
+    if not wheel:
+        names = [f"xirt_torch-2.0.1/{name}" for name in names]
+    validate_contents(names, "Name: xirt-torch\n", wheel=wheel)
+    extra = "xirt/assets/unpublished.pt"
+    if not wheel:
+        extra = "xirt_torch-2.0.1/" + extra
+    with pytest.raises(SystemExit, match="content in distribution"):
+        validate_contents([extra], "", wheel=wheel)
 
 
 @pytest.mark.parametrize(

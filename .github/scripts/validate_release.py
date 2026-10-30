@@ -11,9 +11,13 @@ from datetime import date
 from email.parser import Parser
 from pathlib import Path
 
+BUNDLED_CHECKPOINTS = {
+    f"xirt/assets/{name}.pt" for name in ("rp", "scx", "hsax", "multitask", "faims")
+}
+
 
 def validate_contents(names: list[str], metadata: str, *, wheel: bool) -> None:
-    """Keep benchmark code, measurements and retired dependencies out of the wheel."""
+    """Keep archives out, allowing only the five intentional bundled checkpoints."""
     for name in names:
         parts = Path(name).parts
         relative = parts if wheel else parts[1:]
@@ -38,7 +42,10 @@ def validate_contents(names: list[str], metadata: str, *, wheel: bool) -> None:
             or tutorial_output
             or notebook_state
             or tutorial_in_wheel
-            or name.endswith((".pt", ".h5", ".hdf5", ".bin"))
+            or (
+                name.endswith((".pt", ".h5", ".hdf5", ".bin"))
+                and "/".join(relative) not in BUNDLED_CHECKPOINTS
+            )
         ):
             raise SystemExit(f"Benchmark/archive content in distribution: {name}")
     parsed = Parser().parsestr(metadata)

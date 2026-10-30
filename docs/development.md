@@ -49,11 +49,15 @@ Production modules live in `xirt/`. Benchmark-only code is under
 `xirt/data_pipelines/benchmarks/<use_case>/`: it is included in the source
 distribution for reproducibility, but excluded from the production wheel.
 Data, results, checkpoint archives and retired code bundles are excluded from
-both distributions. TensorFlow and Snakemake are not runtime dependencies.
+both distributions, except for the five intentional default checkpoints in
+`xirt/assets/` and their checksum/provenance manifest. Those files are included
+in both wheel and sdist and loaded through `importlib.resources`, not relative
+checkout paths. The release validator rejects weights outside that exact
+allowlist. TensorFlow and Snakemake are not runtime dependencies.
 The user notebooks and their small dataset live in `examples/` and are
 included only in the source distribution. Their generated results are ignored.
 Local benchmark reruns, model weights, embedding caches and tracking databases
-are ignored too. Published evidence under `benchmark-tf-torch/` has explicit
+are ignored too, apart from the five named default assets. Published evidence under `benchmark-tf-torch/` has explicit
 exceptions; do not use that directory for scratch runs.
 
 Ruff covers all maintained Python source. Retained legacy tests have explicit

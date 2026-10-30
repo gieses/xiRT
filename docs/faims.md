@@ -56,14 +56,20 @@ prediction/learning-curve QC PNGs.
 
 ```bash
 xirt predict --input unlabelled_precursors.csv \
-  --checkpoint results/faims/faims.pt --output predictions.csv
+  --model faims --output predictions.csv
 xirt explain --input unlabelled_precursors.csv \
-  --checkpoint results/faims/faims.pt --output explanations --limit 1
+  --model faims --output explanations --limit 1
 ```
 
 Inference requires only sequences, sites and the checkpoint's selected numeric
 fields. CV labels, FDR, TT and run columns are unnecessary.
-`xirt faims predict` remains a compatibility alias. Outputs preserve row order
+These commands use the bundled pooled 4PM/8PM, seed-42 sequence + charge + m/z
+checkpoint. Both charge and m/z are required for these weights.
+Use `--checkpoint results/faims/faims.pt` instead of `--model faims` for your own
+trained model. `Predictor.load(model="faims")` and `FAIMSPredictor.load()` load
+the same bundled weights; explicit checkpoint paths still work.
+`xirt faims predict` remains a compatibility alias and defaults to the bundled
+FAIMS model when `--checkpoint` is omitted. Outputs preserve row order
 and add `faims_cv-prediction`, the legacy `faims_cv_prediction_v` alias and
 `unknown_token_count`. Add `--qc qc --observed faims_cv` when labels are
 available to generate the same annotated QC used for RT.
@@ -108,7 +114,9 @@ document the controlled comparison of **sequence only, sequence + charge and
 sequence + charge + m/z** across pooled original 4PM/8PM, 26S and 293T cohorts.
 Three initializations share one fixed pair-group partition and training budget.
 `make benchmark-faims` runs or resumes the experiment using verified local input
-CSVs. Raw observations and trained weights stay local.
+CSVs. Raw observations and benchmark run outputs stay local. Only the selected
+pooled charge/m/z seed-42 checkpoint is bundled for default inference; the other
+benchmark weights are not distributed.
 
 Held-out RMSE in volts (mean ± sample SD across the three initializations):
 
