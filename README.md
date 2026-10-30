@@ -80,6 +80,8 @@ Select separate weights with `Predictor.load(model="rp")`, `"scx"` or `"hsax"`;
 `Predictor.load("my_model.pt")` still loads your own checkpoint.
 See the [model cards](https://gieses.github.io/xiRT/chromatography-models/) and
 [prediction/explanation guide](https://gieses.github.io/xiRT/explanations/).
+For complete train/save/predict examples for RP, RP + SCX and FAIMS, follow the
+[five Python workflows](https://gieses.github.io/xiRT/python-workflows/).
 
 ## Learn with real peptide data
 

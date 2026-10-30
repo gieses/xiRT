@@ -1,5 +1,9 @@
 # Python API
 
+For complete, runnable code with input tables, start with
+[Python workflows: train, predict and explain](python-workflows.md).
+This page is the lower-level API reference.
+
 ## Training and prediction
 
 `xiRTNET(params, input_dim, embedding_dim)` validates the network configuration.

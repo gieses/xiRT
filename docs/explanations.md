@@ -1,5 +1,8 @@
 # Shared prediction and residue-level explanations
 
+For copyable training and inference recipes, start with the
+[Python workflows](python-workflows.md).
+
 For executed predictions, annotated plots and matched RP/SCX/hSAX and FAIMS
 residue examples, see the [illustrated walkthrough](prediction-gallery.md).
 

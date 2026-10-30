@@ -146,6 +146,9 @@ Use `Predictor.load(model="faims")` for the bundled charge/m/z FAIMS model and i
 [precursor input schema](faims.md), or `Predictor.load("my_model.pt")` for custom
 weights. `device="cuda:0"` requests CUDA when supported by your environment.
 
+For training RP, RP + SCX or FAIMS in your own code, follow the
+[five Python workflows](python-workflows.md).
+
 The same defaults work from the CLI:
 
 ```bash
@@ -190,7 +193,7 @@ studies, not independent external-transfer tests.
 |---|---|
 | Run your first model | [Installation and CLI](getting-started.md) |
 | Follow a complete, runnable example | [Training and fine-tuning notebooks](tutorials.md) |
-| Work directly in Python | [API reference](api.md) |
+| Work directly in Python | [Python workflows](python-workflows.md) and [API reference](api.md) |
 | Reuse a 1.x workflow | [Migration guide](migration.md) |
 | Evaluate optional protein-language-model features | [ESM-C and adapters](embeddings.md) |
 | Contribute or publish a release | [Development guide](development.md) |

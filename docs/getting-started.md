@@ -1,5 +1,9 @@
 # Installation and CLI
 
+Prefer Python to command-line training? The [Python workflows](python-workflows.md)
+walk through training, bundled inference and residue explanations for RP,
+RP + SCX and FAIMS with copyable examples.
+
 ## Supported runtime
 
 The distribution name is `xirt-torch`; imports and commands still use `xirt`.
