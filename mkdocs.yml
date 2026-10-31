@@ -72,9 +72,11 @@ nav:
   - Home: index.md
   - Get started:
       - Installation and CLI: getting-started.md
+      - Python workflows: python-workflows.md
       - Training notebooks: tutorials.md
       - Migration from 1.x: migration.md
   - User guide:
+      - Python workflows: python-workflows.md
       - Scientific configuration: configuration.md
       - Outputs and provenance: results.md
       - Recurrent fine-tuning: fine-tuning.md

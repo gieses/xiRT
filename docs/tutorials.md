@@ -1,5 +1,9 @@
 # Training and fine-tuning notebooks
 
+Prefer short copyable Python blocks to notebooks? Start with the
+[five Python workflows](python-workflows.md) for training, bundled inference
+and explanations.
+
 The RT and FAIMS CPU notebooks cover the recurrent Python API. They include observed
 data, run without downloads and save outputs under `examples/results/`.
 They are marimo notebooks stored as Python source, so their cells can also run

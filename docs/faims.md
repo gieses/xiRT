@@ -52,6 +52,9 @@ full mapping from `default_faims_params()`. Outputs include `faims.pt`,
 `predictions.csv`, `history.csv`, `metrics.json`, `audit.json` and shared
 prediction/learning-curve QC PNGs.
 
+For a complete copyable Python train/save/reload/predict example, see
+[Python workflows: FAIMS](python-workflows.md#5-train-and-run-faims).
+
 ## Predict and explain
 
 ```bash
