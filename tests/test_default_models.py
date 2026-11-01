@@ -55,8 +55,12 @@ def test_bundled_models_match_final_training_checksums_and_predict(
 ):
     manifest = json.loads(files("xirt.assets").joinpath("manifest.json").read_text())
     gallery = json.loads((ROOT / "docs/assets/prediction-gallery/manifest.json").read_text())
+    assert manifest["license"] == "CC-BY-NC-4.0"
+    assert manifest["license_url"] == "https://creativecommons.org/licenses/by-nc/4.0/"
     assert set(manifest["models"]) == set(assets.MODEL_NAMES)
     record = manifest["models"][name]
+    assert record["license"] == manifest["license"]
+    assert record["license_url"] == manifest["license_url"]
     resource = files("xirt.assets").joinpath(record["filename"]).read_bytes()
     assert len(resource) == record["bytes"]
     assert hashlib.sha256(resource).hexdigest() == record["sha256"]

@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- License the xiRT project code and all five bundled model checkpoints under
+  Creative Commons Attribution-NonCommercial 4.0 International (CC-BY-NC-4.0).
+  Include the license, attribution and scope notices in wheels and source
+  distributions and document noncommercial use requirements.
+- Preserve prior Apache-2.0 grants, third-party notices, historical artifacts
+  and the separate training-data licenses. Model weights are unchanged.
+
 ## [2.0.1] - 2026-10-19
 
 ### Changed

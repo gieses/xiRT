@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import os
 import runpy
 import shutil
@@ -20,6 +21,26 @@ release_notes = runpy.run_path(str(ROOT / ".github/scripts/validate_release.py")
 validate_contents = runpy.run_path(str(ROOT / ".github/scripts/validate_release.py"))[
     "validate_contents"
 ]
+
+
+def test_code_and_model_license_scope_and_distribution_notices():
+    project = tomllib.loads((ROOT / "pyproject.toml").read_text())["project"]
+    assert project["license"] == "CC-BY-NC-4.0"
+    assert project["license-files"] == ["LICENCE", "NOTICE", "LICENSES/Apache-2.0.txt"]
+    license_text = (ROOT / "LICENCE").read_bytes()
+    assert hashlib.sha256(license_text.rstrip(b"\n") + b"\n").hexdigest() == (
+        "3711f963c05d0be80d53e5923308a6dee31b203da23435c9cfb7c7b6e4dd5e19"
+    )
+    notice = (ROOT / "NOTICE").read_text()
+    assert "xiRT project code and all five bundled model checkpoints" in notice
+    assert "does not revoke permissions already granted" in notice
+    assert "CC-BY-4.0" in notice
+    manifest = (ROOT / "MANIFEST.in").read_text()
+    assert "LICENCE NOTICE" in manifest
+    assert "include LICENSES/Apache-2.0.txt" in manifest
+    apache = (ROOT / "LICENSES/Apache-2.0.txt").read_text()
+    assert "Version 2.0, January 2004" in apache
+    assert "Copyright 2020 Sven Giese" in apache
 
 
 @pytest.mark.parametrize(

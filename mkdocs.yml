@@ -92,6 +92,7 @@ nav:
       - Native fine-tuning: benchmarks/fine-tune-torch.md
   - Reference:
       - Python API: api.md
+      - Licensing and attribution: licensing.md
       - Citation and references: references.md
   - Contributing:
       - Development and release: development.md

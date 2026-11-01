@@ -6,6 +6,11 @@ models, not two-epoch demo weights. **The four checkpoints and the selected FAIM
 checkpoint are bundled in `xirt/assets/`, in Git, wheels and source distributions.**
 Training tables, split membership and row-level predictions are not distributed.
 
+**The xiRT code and all five bundled model checkpoints are licensed under
+CC-BY-NC-4.0 (Creative Commons Attribution-NonCommercial 4.0 International).**
+See [licensing and attribution](licensing.md) for noncommercial use requirements,
+prior Apache-2.0 grants and third-party exceptions.
+
 ## Models and intended use
 
 | Bundled checkpoint | Outputs | Trainable parameters |
@@ -40,7 +45,8 @@ single-versus-joint comparison is not capacity-matched and uses one initializati
   related article DOI [10.1038/s41467-021-23441-0](https://doi.org/10.1038/s41467-021-23441-0).
 - **Table:** `ecoli.zip` → `ecoli/DSS_CSM_anpxirt.csv`.
 - **Data license:** CC-BY-4.0 as recorded in the Zenodo metadata. The project
-  license is Apache-2.0; the source-data license and attribution remain separate.
+  code and bundled-model license is CC-BY-NC-4.0; the source-data license and
+  attribution remain separate. This update does not relicense the dataset.
 - **CSV SHA-256:** `3833575aa3ec45d55b1c3f3af2556b97314b26dc5d1880301c18514a0295b72f`.
 - **Integrity:** the retrieved member's size/CRC was checked against the archive
   catalogue; CRC32 is `1470239631`. The published whole-ZIP MD5 is recorded,

@@ -23,7 +23,7 @@ and split information with every result.
 [Get started](getting-started.md){ .md-button .md-button--primary }
 [Try a notebook](tutorials.md){ .md-button }
 
-<p class="xirt-runtime">Python 3.12-3.14 &nbsp; / &nbsp; CPU or CUDA &nbsp; / &nbsp; Apache-2.0</p>
+<p class="xirt-runtime">Python 3.12-3.14 &nbsp; / &nbsp; CPU or CUDA &nbsp; / &nbsp; <a href="licensing/">Code and models: CC-BY-NC-4.0</a></p>
 
 </div>
 <div class="xirt-hero__visual" markdown="1">
