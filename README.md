@@ -17,6 +17,11 @@
 
 ## What xiRT does
 
+**The xiRT project code and all five bundled models are licensed under
+Creative Commons Attribution-NonCommercial 4.0 International (CC-BY-NC-4.0).**
+See the [licensing guide](https://gieses.github.io/xiRT/licensing/) for attribution,
+noncommercial use and preserved third-party and prior-license terms.
+
 xiRT learns peptide embeddings and predicts continuous retention times or
 fraction labels. Crosslinked peptides share a recurrent encoder between their
 two sequence branches; linear peptides use a single input. Train a model for
@@ -153,6 +158,20 @@ documentation, notebook, test and release commands. Benchmark code lives in
 [Migration](https://gieses.github.io/xiRT/migration/) ·
 [Python API](https://gieses.github.io/xiRT/api/) ·
 [Development](https://gieses.github.io/xiRT/development/)
+
+## License
+
+The **code and bundled model weights** (`rp`, `scx`, `hsax`, `multitask` and
+`faims`) use **CC-BY-NC-4.0**. Sharing requires attribution, a license notice and
+an indication of modifications; the license grants rights for noncommercial
+purposes only. Commercial use requires separate permission unless another
+applicable grant or legal exception permits it.
+
+Read the [full license](https://github.com/gieses/xiRT/blob/master/LICENCE) and
+[scope and attribution notice](https://github.com/gieses/xiRT/blob/master/NOTICE).
+Third-party dependencies, external pretrained models, source datasets and
+historical artifacts retain their own terms. This change does **not** revoke
+Apache-2.0 permissions already granted for previously distributed code or models.
 
 ## Citation
 

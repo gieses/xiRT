@@ -1,5 +1,7 @@
 {
   "schema": "xirt-bundled-models-v1",
+  "license": "CC-BY-NC-4.0",
+  "license_url": "https://creativecommons.org/licenses/by-nc/4.0/",
   "default": "multitask",
   "chromatography_source": {
     "record": "https://zenodo.org/records/4720760",
@@ -23,30 +25,40 @@
   },
   "models": {
     "rp": {
+      "license": "CC-BY-NC-4.0",
+      "license_url": "https://creativecommons.org/licenses/by-nc/4.0/",
       "filename": "rp.pt",
       "bytes": 560433,
       "sha256": "785cfe2ba30c17b9d1f98f50964377a63298471236114c9efbb199f397efbccb",
       "outputs": {"rp": "s"}
     },
     "scx": {
+      "license": "CC-BY-NC-4.0",
+      "license_url": "https://creativecommons.org/licenses/by-nc/4.0/",
       "filename": "scx.pt",
       "bytes": 560433,
       "sha256": "458084d1027680ce6576db80a3567a4e07d417ad25f4e5eecfdcf1c535f546fe",
       "outputs": {"scx": "fraction"}
     },
     "hsax": {
+      "license": "CC-BY-NC-4.0",
+      "license_url": "https://creativecommons.org/licenses/by-nc/4.0/",
       "filename": "hsax.pt",
       "bytes": 560433,
       "sha256": "adfbbe291afa332aa2b35246bbe0443b8a280a9bf453cd91490f1c71e8b2b808",
       "outputs": {"hsax": "fraction"}
     },
     "multitask": {
+      "license": "CC-BY-NC-4.0",
+      "license_url": "https://creativecommons.org/licenses/by-nc/4.0/",
       "filename": "multitask.pt",
       "bytes": 762995,
       "sha256": "e47ff853d3f94508b7d07b0e846ee17f31226b90712687aca0f0f9941329c4c5",
       "outputs": {"rp": "s", "scx": "fraction", "hsax": "fraction"}
     },
     "faims": {
+      "license": "CC-BY-NC-4.0",
+      "license_url": "https://creativecommons.org/licenses/by-nc/4.0/",
       "filename": "faims.pt",
       "bytes": 49621,
       "sha256": "4143a0971e17e23a064ee938bc76bd48eb62edf3ce2f4d40a87170c9b169f9d4",

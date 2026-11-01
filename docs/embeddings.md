@@ -114,7 +114,9 @@ target-selection arguments.
 
 ## Licenses and access
 
-xiRT's Apache-2.0 license does **not** override pretrained-model licenses.
+The xiRT project code and its five bundled RP/SCX/hSAX/joint/FAIMS models use
+[CC-BY-NC-4.0](licensing.md). This does **not** override external pretrained-model
+licenses, including ESM weights.
 Review the exact model card, license, acceptable-use rules, and any access
 conditions attached to the weight revision you download. Terms may differ
 between model families and revisions; do not assume that an SDK license grants

@@ -9,6 +9,11 @@ The integration follows the data conventions of
 `b85482ffc246b2dc669c4592f752568fd9b1baed` (Apache-2.0). It trains xiRT's
 native shared GRU, not the upstream XGBoost model.
 
+**The xiRT code and its bundled `xirt/assets/faims.pt` model are licensed under
+CC-BY-NC-4.0**, like the four bundled chromatography checkpoints. The upstream
+xiFAIMS Apache-2.0 terms, source-data terms and previously granted Apache-2.0
+permissions remain unchanged. See [licensing and attribution](licensing.md).
+
 ## Train from observations
 
 ```bash

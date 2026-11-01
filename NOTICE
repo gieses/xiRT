@@ -1,0 +1,43 @@
+xiRT code and bundled models
+Copyright 2020 Sven Giese
+Contributors: Sven Giese and Ludwig Sinn.
+Project: https://github.com/gieses/xiRT
+
+The xiRT project code and all five bundled model checkpoints (rp.pt, scx.pt,
+hsax.pt, multitask.pt and faims.pt in xirt/assets/) are licensed under Creative
+Commons Attribution-NonCommercial 4.0 International (CC-BY-NC-4.0), except for
+separately identified third-party material and historical artifacts below.
+The full license is in LICENCE:
+https://creativecommons.org/licenses/by-nc/4.0/
+
+For sharing, retain the supplied attribution, copyright, license and warranty
+notices, link to the project and license where reasonably practicable, and
+indicate modifications, including changes to code or model weights. The grant
+covers noncommercial purposes only, as defined in the license; commercial use
+requires separate permission unless another applicable grant or legal exception
+permits it. The license does not grant patent or trademark rights. The material
+is provided without warranties as set out in LICENCE.
+
+Suggested attribution:
+xiRT by Sven Giese and Ludwig Sinn, https://github.com/gieses/xiRT,
+CC-BY-NC-4.0. State any modifications when sharing modified material.
+Scientific reference: Giese, S.H., Sinn, L.R., Wegner, F. et al. Retention time
+prediction using neural networks increases identifications in crosslinking mass
+spectrometry. Nature Communications 12, 3237 (2021).
+https://doi.org/10.1038/s41467-021-23441-0
+
+Scope and preserved terms
+
+This licensing update does not revoke permissions already granted under
+Apache-2.0 for previously distributed code or model checkpoints. Such copies
+remain usable under their original terms. LICENSES/Apache-2.0.txt preserves the
+previous license and copyright notice for those grants and for Apache-licensed
+upstream material; it is not an alternative license offer for new xiRT material.
+
+Third-party dependencies, upstream source and model weights, and datasets retain
+their own licenses. In particular, the chromatography source data from Zenodo
+record 4720760 remain CC-BY-4.0; that data license is distinct from the xiRT code
+and bundled-model license. External ESM models retain their own model-card and
+access terms. The pinned Apache-2.0 xiFAIMS source and historical benchmark/source
+snapshots retain their original notices and terms. No dataset, third-party code
+or historical artifact is relicensed by this notice.
